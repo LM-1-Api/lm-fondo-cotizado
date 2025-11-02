@@ -6,7 +6,8 @@
     { "src": "IMG_2975.png", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/spot", "dest": "/server.js" },
+    { "src": "/gold", "dest": "/server.js" },
+    { "src": "/silver", "dest": "/server.js" },
     { "src": "/IMG_2975.png", "dest": "/IMG_2975.png" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
