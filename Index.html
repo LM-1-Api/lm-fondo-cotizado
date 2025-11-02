@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>LM Fondo Cotizado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --lm-bg: #1a1a1a;
+      --lm-text: #ffffff;
+      --lm-gold: #c6a663;
+      --lm-green: #00c853;
+    }
+    body { margin:0; background:#1a1a1a; color:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .topbar {
+      position:fixed; top:0; left:0; right:0; height:52px;
+      background:rgba(26,26,26,.95);
+      border-bottom:1px solid rgba(198,166,99,.4);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 14px; z-index:1000;
+    }
+    .title{font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:12px;}
+    .prices-row{display:flex;gap:16px;align-items:center;}
+    .price-block{display:flex;gap:6px;align-items:baseline;}
+    .price-label{text-transform:uppercase;font-size:11px;opacity:.7;}
+    .price-value{font-size:14px;font-weight:600;}
+    .price-gold{color:#c6a663;}
+    .price-silver{color:#00c853;}
+    .charts{position:absolute;top:52px;left:0;right:0;bottom:0;display:flex;gap:14px;padding:14px;}
+    .chart-box{flex:1;border:1px solid rgba(198,166,99,.45);border-radius:8px;background:#151515;display:flex;flex-direction:column;min-height:350px;position:relative;}
+    .chart-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 4px;}
+    .chart-title{font-weight:600;font-size:12px;text-transform:uppercase;}
+    .chart-price{font-weight:600;font-size:16px;color:#00c853;}
+    .chart-sub{font-size:11px;opacity:.6;display:flex;gap:6px;align-items:center;}
+    .tf-row{display:flex;gap:6px;padding:6px 12px 10px;}
+    .tf-btn{background:#1a1a1a;border:1px solid rgba(255,255,255,.03);color:#fff;border-radius:4px;padding:2px 8px;font-size:11px;}
+    .tf-btn.active{border-color:#c6a663;color:#c6a663;}
+    .chart-body{flex:1;min-height:240px;}
+    .chart-brand{position:absolute;left:10px;bottom:10px;display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.45);border:1px solid rgba(198,166,99,.4);border-radius:5px;padding:4px 8px;}
+    .chart-brand span{font-size:10px;text-transform:uppercase;letter-spacing:.04em;}
+    @media(max-width:980px){.charts{flex-direction:column;}}
+  </style>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="title">LM Fondo Cotizado · USD</div>
+    <div class="prices-row">
+      <div class="price-block">
+        <span class="price-label">Oro XAU/USD</span>
+        <span id="top-xau" class="price-value price-gold">--</span>
+      </div>
+      <div class="price-block">
+        <span class="price-label">Plata XAG/USD</span>
+        <span id="top-xag" class="price-value price-silver">--</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-box">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">ORO (XAU/USD)</div>
+          <div class="chart-sub">
+            <span id="gold-change">Tiempo real</span>
+            <span style="color:#c6a663;">LM Fondo Cotizado</span>
+          </div>
+        </div>
+        <div id="gold-price" class="chart-price">$--</div>
+      </div>
+      <div class="tf-row" data-metal="XAU">
+        <button class="tf-btn active" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="1h">1h</button>
+        <button class="tf-btn" data-tf="4h">4h</button>
+        <button class="tf-btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-body" id="chart-gold"></div>
+      <div class="chart-brand">
+        <!-- cuando subamos el PNG lo mostramos -->
+        <span>LM Fondo Cotizado</span>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">PLATA (XAG/USD)</div>
+          <div class="chart-sub">
+            <span id="silver-change">Tiempo real</span>
+            <span style="color:#c6a663;">LM Fondo Cotizado</span>
+          </div>
+        </div>
+        <div id="silver-price" class="chart-price">$--</div>
+      </div>
+      <div class="tf-row" data-metal="XAG">
+        <button class="tf-btn active" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="1h">1h</button>
+        <button class="tf-btn" data-tf="4h">4h</button>
+        <button class="tf-btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-body" id="chart-silver"></div>
+      <div class="chart-brand">
+        <!-- cuando subamos el PNG lo mostramos -->
+        <span>LM Fondo Cotizado</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // después: fetch("/api/spot")
+  </script>
+</body>
+</html>
