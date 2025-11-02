@@ -107,13 +107,14 @@
     .chart-price {
       font-weight: 700;
       color: var(--lm-green);
-      font-size: 20px;
+      font-size: 22px;
+      margin-top: 6px;
     }
 
     .tf-row {
       display: flex;
       gap: 6px;
-      margin: 10px 0 6px;
+      margin: 12px 0 6px;
       flex-wrap: wrap;
     }
     .tf-btn {
@@ -129,9 +130,39 @@
       background: rgba(198,166,99,0.13);
     }
 
+    /* 👇 AJUSTE: el contenedor del gráfico ahora es relativo para meter el logo adentro */
     .chart-body {
       flex: 1;
       min-height: 190px;
+      position: relative;
+    }
+
+    /* 👇 AJUSTE: chapita dentro del gráfico */
+    .chart-watermark {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      background: rgba(0,0,0,0.32);
+      border: 1px solid rgba(198,166,99,0.15);
+      border-radius: 10px;
+      padding: 2px 8px 3px;
+      backdrop-filter: blur(4px);
+    }
+
+    .chart-watermark img {
+      height: 16px;
+      width: 16px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .chart-watermark span {
+      font-size: 10px;
+      letter-spacing: .04em;
+      color: rgba(255,255,255,.7);
     }
 
     .chart-brand {
@@ -152,22 +183,14 @@
       filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
     }
 
-    /* canvas del chart */
     #chart-gold, #chart-silver {
       height: 220px;
     }
 
     @media (min-width: 980px) {
-      .wrap {
-        flex-direction: row;
-      }
-      .chart-card {
-        width: 50%;
-      }
-      body {
-        max-width: 1180px;
-        margin: 0 auto;
-      }
+      .wrap { flex-direction: row; }
+      .chart-card { width: 50%; }
+      body { max-width: 1180px; margin: 0 auto; }
     }
   </style>
   <!-- librería de velas -->
@@ -175,7 +198,7 @@
 </head>
 <body>
   <div class="topbar">
-    <!-- tu logo -->
+    <!-- tu logo arriba -->
     <img src="./IMG_2975.png" alt="LM" />
     <div>
       <div class="title">LM Fondo Cotizado · USD</div>
@@ -183,12 +206,10 @@
         <div class="tk">
           <span class="tk-label">ORO</span>
           <span id="tk-gold" class="tk-value">$--</span>
-          <span style="color:#00c853;font-size:10px" id="tk-gold-chg"></span>
         </div>
         <div class="tk">
           <span class="tk-label">PLATA</span>
           <span id="tk-silver" class="tk-value">$--</span>
-          <span style="color:#00c853;font-size:10px" id="tk-silver-chg"></span>
         </div>
       </div>
     </div>
@@ -210,7 +231,14 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
-      <div class="chart-body" id="chart-gold"></div>
+      <div class="chart-body" id="chart-gold">
+        <!-- 👇 AJUSTE: logo adentro del gráfico -->
+        <div class="chart-watermark">
+          <img src="./IMG_2975.png" alt="LM">
+          <span>LM Fondo Cotizado</span>
+        </div>
+      </div>
+      <!-- 👇 mantenemos la chapita de abajo -->
       <div class="chart-brand">
         <img src="./IMG_2975.png" alt="LM" class="lm-badge">
         <span>LM Fondo Cotizado</span>
@@ -232,7 +260,13 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
-      <div class="chart-body" id="chart-silver"></div>
+      <div class="chart-body" id="chart-silver">
+        <!-- 👇 AJUSTE: logo adentro del gráfico -->
+        <div class="chart-watermark">
+          <img src="./IMG_2975.png" alt="LM">
+          <span>LM Fondo Cotizado</span>
+        </div>
+      </div>
       <div class="chart-brand">
         <img src="./IMG_2975.png" alt="LM" class="lm-badge">
         <span>LM Fondo Cotizado</span>
@@ -241,55 +275,45 @@
   </div>
 
   <script>
-    // >>> 1) vamos a traer los precios desde TU backend en vercel:
+    // trae los precios desde TU backend en Vercel
     async function loadSpot() {
       try {
         const r = await fetch("/api/spot");
         const data = await r.json();
-        if (data.gold) {
-          const p = data.gold.price;
-          document.getElementById("gold-price").textContent = "$" + p.toFixed(2);
-          document.getElementById("tk-gold").textContent = "$" + p.toFixed(2);
+        if (data.gold && data.gold.price) {
+          document.getElementById("gold-price").textContent = "$" + data.gold.price.toFixed(2);
+          document.getElementById("tk-gold").textContent = "$" + data.gold.price.toFixed(2);
         }
-        if (data.silver) {
-          const p = data.silver.price;
-          document.getElementById("silver-price").textContent = "$" + p.toFixed(2);
-          document.getElementById("tk-silver").textContent = "$" + p.toFixed(2);
+        if (data.silver && data.silver.price) {
+          document.getElementById("silver-price").textContent = "$" + data.silver.price.toFixed(2);
+          document.getElementById("tk-silver").textContent = "$" + data.silver.price.toFixed(2);
         }
-        // también devolvemos los datos para que las velas arranquen
         return data;
       } catch (e) {
-        console.log("no se pudo /api/spot", e);
+        console.log("error spot", e);
         return null;
       }
     }
 
-    // >>> 2) función para crear una serie de velas fake con el último precio
+    // genera velas rápidas a partir de un precio
     function makeCandlesFromSpot(price) {
       const now = Math.floor(Date.now() / 1000);
       const out = [];
       let last = price;
-      for (let i = 30; i >= 0; i--) {
-        const t = now - i * 60; // 1 min
-        // pequeña variación random
+      for (let i = 40; i >= 0; i--) {
+        const t = now - i * 60;
         const delta = (Math.random() - 0.5) * (price * 0.0007);
         const open = last;
         const close = last + delta;
         const high = Math.max(open, close) + price * 0.0004;
         const low = Math.min(open, close) - price * 0.0004;
-        out.push({
-          time: t,
-          open,
-          high,
-          low,
-          close
-        });
+        out.push({ time: t, open, high, low, close });
         last = close;
       }
       return out;
     }
 
-    // >>> 3) crear gráficos
+    // crear gráficos
     const goldChart = LightweightCharts.createChart(document.getElementById("chart-gold"), {
       layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
       grid: {
@@ -328,10 +352,9 @@
       wickDownColor: "#d32f2f"
     });
 
-    // >>> 4) inicializar
+    // iniciar
     (async () => {
       const spot = await loadSpot();
-      // si el backend respondió, dibujamos
       if (spot && spot.gold) {
         goldSeries.setData(makeCandlesFromSpot(spot.gold.price));
       } else {
@@ -344,16 +367,14 @@
       }
     })();
 
-    // >>> 5) refrescar cada 60s
+    // refrescar cada 60s
     setInterval(async () => {
       const spot = await loadSpot();
       if (spot && spot.gold) {
-        const c = makeCandlesFromSpot(spot.gold.price);
-        goldSeries.setData(c);
+        goldSeries.setData(makeCandlesFromSpot(spot.gold.price));
       }
       if (spot && spot.silver) {
-        const c = makeCandlesFromSpot(spot.silver.price);
-        silverSeries.setData(c);
+        silverSeries.setData(makeCandlesFromSpot(spot.silver.price));
       }
     }, 60000);
   </script>
