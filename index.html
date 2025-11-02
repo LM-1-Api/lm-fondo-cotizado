@@ -7,10 +7,6 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <title>LM Fondo Cotizado</title>
-    <link
-      rel="preconnect"
-      href="https://unpkg.com"
-    />
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <style>
       :root {
@@ -132,19 +128,16 @@
         font-size: 13px;
         opacity: 0.8;
       }
-
-      /* watermark dentro del gráfico */
       .lm-watermark {
         position: absolute;
         left: 10px;
         bottom: 10px;
         width: 32px;
         height: 32px;
-        opacity: 0.8;
+        opacity: 0.85;
         object-fit: contain;
         pointer-events: none;
       }
-
       @media (min-width: 820px) {
         .wrap {
           max-width: 1180px;
@@ -167,7 +160,6 @@
     </div>
 
     <div class="wrap">
-      <!-- ORO -->
       <div class="card" id="gold-card">
         <div class="card-head">
           <div class="title-sm">ORO (XAU/USD)</div>
@@ -184,7 +176,6 @@
         </div>
         <div class="chart-container">
           <div id="chart-gold" class="chart-box"></div>
-          <!-- logo dentro -->
           <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
@@ -193,7 +184,6 @@
         </div>
       </div>
 
-      <!-- PLATA -->
       <div class="card" id="silver-card">
         <div class="card-head">
           <div class="title-sm">PLATA (XAG/USD)</div>
@@ -210,7 +200,6 @@
         </div>
         <div class="chart-container">
           <div id="chart-silver" class="chart-box"></div>
-          <!-- logo dentro -->
           <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
@@ -221,7 +210,6 @@
     </div>
 
     <script>
-      // 1) Cargar precios desde el back (tu server.js)
       async function loadSpot() {
         try {
           const r = await fetch("/api/spot");
@@ -245,7 +233,6 @@
         }
       }
 
-      // 2) generar velas a partir de spot
       function makeCandlesFromSpot(price, points = 40, volatility = 0.0007) {
         const now = Math.floor(Date.now() / 1000);
         const out = [];
@@ -263,7 +250,6 @@
         return out;
       }
 
-      // 3) crear charts
       const goldChart = LightweightCharts.createChart(
         document.getElementById("chart-gold"),
         {
@@ -273,8 +259,7 @@
             horzLines: { color: "rgba(198,166,99,0.05)" }
           },
           rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-          timeScale: { borderColor: "rgba(198,166,99,0.3)" },
-          crosshair: { mode: 0 }
+          timeScale: { borderColor: "rgba(198,166,99,0.3)" }
         }
       );
       const goldSeries = goldChart.addCandlestickSeries({
@@ -295,8 +280,7 @@
             horzLines: { color: "rgba(198,166,99,0.05)" }
           },
           rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-          timeScale: { borderColor: "rgba(198,166,99,0.3)" },
-          crosshair: { mode: 0 }
+          timeScale: { borderColor: "rgba(198,166,99,0.3)" }
         }
       );
       const silverSeries = silverChart.addCandlestickSeries({
@@ -308,7 +292,6 @@
         wickDownColor: "#d32f2f"
       });
 
-      // guardamos último spot
       const lastPrices = {
         gold: 4000,
         silver: 50
@@ -342,15 +325,14 @@
         }
 
         if (metal === "XAU") {
-          const data = makeCandlesFromSpot(lastPrices.gold, points, vol);
-          goldSeries.setData(data);
+          goldSeries.setData(makeCandlesFromSpot(lastPrices.gold, points, vol));
         } else {
-          const data = makeCandlesFromSpot(lastPrices.silver, points, vol);
-          silverSeries.setData(data);
+          silverSeries.setData(
+            makeCandlesFromSpot(lastPrices.silver, points, vol)
+          );
         }
       }
 
-      // click en botones
       document.querySelectorAll(".tf-row").forEach((row) => {
         const metal = row.getAttribute("data-metal");
         row.querySelectorAll(".tf-btn").forEach((btn) => {
@@ -367,33 +349,28 @@
 
       (async () => {
         const spot = await loadSpot();
-        if (spot && spot.gold) {
-          lastPrices.gold = spot.gold.price;
-        }
-        if (spot && spot.silver) {
-          lastPrices.silver = spot.silver.price;
-        }
+        if (spot && spot.gold) lastPrices.gold = spot.gold.price;
+        if (spot && spot.silver) lastPrices.silver = spot.silver.price;
         applyTimeframe("XAU", "1m");
         applyTimeframe("XAG", "1m");
       })();
 
-      // refresca cada 60s y mantiene timeframe
       setInterval(async () => {
         const spot = await loadSpot();
         if (spot && spot.gold) lastPrices.gold = spot.gold.price;
         if (spot && spot.silver) lastPrices.silver = spot.silver.price;
 
-        const goldActive =
+        const gtf =
           document
             .querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')
             ?.getAttribute("data-tf") || "1m";
-        const silverActive =
+        const stf =
           document
             .querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')
             ?.getAttribute("data-tf") || "1m";
 
-        applyTimeframe("XAU", goldActive);
-        applyTimeframe("XAG", silverActive);
+        applyTimeframe("XAU", gtf);
+        applyTimeframe("XAG", stf);
       }, 60000);
     </script>
   </body>
