@@ -1,62 +1,47 @@
-import express from "express";
-import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// server.js
+const express = require("express");
 const app = express();
-app.use(cors());
-app.use(express.static(__dirname));
 
-// tu key de goldapi
-const GOLDAPI_KEY = process.env.GOLDAPI_KEY || "goldapi-3szmoxgsmgo1ms8o-io";
+const GOLDAPI_KEY = "goldapi-3szmoxgsmgo1ms8o-io";
 
 app.get("/api/spot", async (req, res) => {
   try {
-    const metals = ["XAU", "XAG"];
-    const out = {};
-    for (const metal of metals) {
-      const resp = await fetch(`https://www.goldapi.io/api/${metal}/USD`, {
-        headers: {
-          "x-access-token": GOLDAPI_KEY,
-          "Accept": "application/json"
-        }
-      });
-
-      if (!resp.ok) {
-        out[metal] = {
-          metal,
-          price: metal === "XAU" ? 2350 : 28,
-          source: "fallback"
-        };
-      } else {
-        const json = await resp.json();
-        out[metal] = {
-          metal,
-          price: json.price,
-          change: json.ch,
-          change_pct: json.chp,
-          ts: json.timestamp ? json.timestamp * 1000 : Date.now(),
-          source: "goldapi.io"
-        };
+    // Oro
+    const g = await fetch("https://www.goldapi.io/api/XAU/USD", {
+      headers: {
+        "x-access-token": GOLDAPI_KEY,
+        "Content-Type": "application/json"
       }
-    }
+    });
+    const gold = await g.json();
 
-    res.json({
-      base: "USD",
-      gold: out["XAU"],
-      silver: out["XAG"]
+    // Plata
+    const s = await fetch("https://www.goldapi.io/api/XAG/USD", {
+      headers: {
+        "x-access-token": GOLDAPI_KEY,
+        "Content-Type": "application/json"
+      }
+    });
+    const silver = await s.json();
+
+    res.status(200).json({
+      ok: true,
+      gold: {
+        price: Number(gold.price) || 4000
+      },
+      silver: {
+        price: Number(silver.price) || 50
+      }
     });
   } catch (err) {
-    console.error("error /api/spot", err);
-    res.status(500).json({ error: "goldapi failed" });
+    console.log("API error", err);
+    res.status(200).json({
+      ok: false,
+      gold: { price: 4000 },
+      silver: { price: 50 }
+    });
   }
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-export default app;
+// necesario para Vercel
+module.exports = app;
