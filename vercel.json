@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "server.js", "use": "@vercel/node" },
-    { "src": "index.html", "use": "@vercel/static" }
+    { "src": "Index.html", "use": "@vercel/static" },
+    { "src": "IMG_2975.png", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/IMG_2975.png", "dest": "/IMG_2975.png" },
     { "src": "/api/spot", "dest": "/server.js" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/Index.html" }
   ]
 }
