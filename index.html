@@ -8,7 +8,7 @@
     />
     <title>LM Fondo Cotizado</title>
 
-    <!-- lightweight charts -->
+    <!-- Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -112,7 +112,7 @@
         position: absolute;
         inset: 0;
       }
-      /* 👇 logo adentro del gráfico */
+      /* 👇 logo dentro del gráfico */
       .lm-watermark {
         position: absolute;
         left: 8px;
@@ -120,9 +120,9 @@
         width: 38px;
         height: 38px;
         object-fit: contain;
-        opacity: 0.9;
+        opacity: 0.95;
         pointer-events: none;
-        z-index: 10; /* <- para que quede arriba de las velas */
+        z-index: 10;
       }
       .chart-footer {
         background: #000;
@@ -174,8 +174,8 @@
         </div>
         <div class="chart-container">
           <div id="chart-gold" class="chart-box"></div>
-          <!-- usa el archivo que subiste en minúsculas -->
-          <img src="/img_2975.png" alt="LM" class="lm-watermark" />
+          <!-- usa el nombre EXACTO del repo -->
+          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
           <span>LM Fondo Cotizado</span>
@@ -202,7 +202,7 @@
         </div>
         <div class="chart-container">
           <div id="chart-silver" class="chart-box"></div>
-          <img src="/img_2975.png" alt="LM" class="lm-watermark" />
+          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
           <span>LM Fondo Cotizado</span>
@@ -214,7 +214,7 @@
     </div>
 
     <script>
-      /* ================= UTILS ================== */
+      /* ====== helpers ====== */
       function formatDate(d) {
         const dd = String(d.getDate()).padStart(2, "0");
         const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -224,7 +224,7 @@
         return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
       }
 
-      /* ============== CARGA DE PRECIOS ============== */
+      /* ====== precios desde tu /api/spot ====== */
       async function loadSpot() {
         try {
           const r = await fetch("/api/spot");
@@ -241,7 +241,6 @@
               "Actualizado: " + formatDate(new Date());
             lastPrices.gold = p;
           }
-
           if (data.silver && data.silver.price) {
             const p = Number(data.silver.price);
             document.getElementById("silver-price").textContent =
@@ -252,7 +251,6 @@
               "Actualizado: " + formatDate(new Date());
             lastPrices.silver = p;
           }
-
           return data;
         } catch (e) {
           console.log("error spot", e);
@@ -260,37 +258,9 @@
         }
       }
 
-      /* ============== CHARTS ============== */
-      const goldChart = LightweightCharts.createChart(
-        document.getElementById("chart-gold"),
-        {
-          layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
-          grid: {
-            vertLines: { color: "rgba(198,166,99,0.05)" },
-            horzLines: { color: "rgba(198,166,99,0.05)" }
-          },
-          rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-          timeScale: {
-            borderColor: "rgba(198,166,99,0.3)",
-            timeVisible: true,       // 👈 muestra hora
-            secondsVisible: false,
-            fixLeftEdge: true,
-            fixRightEdge: true
-          }
-        }
-      );
-      const goldSeries = goldChart.addCandlestickSeries({
-        upColor: "#00c853",
-        downColor: "#d32f2f",
-        borderUpColor: "#00c853",
-        borderDownColor: "#d32f2f",
-        wickUpColor: "#00c853",
-        wickDownColor: "#d32f2f"
-      });
-
-      const silverChart = LightweightCharts.createChart(
-        document.getElementById("chart-silver"),
-        {
+      /* ====== charts ====== */
+      function makeChart(container) {
+        return LightweightCharts.createChart(container, {
           layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
           grid: {
             vertLines: { color: "rgba(198,166,99,0.05)" },
@@ -301,11 +271,29 @@
             borderColor: "rgba(198,166,99,0.3)",
             timeVisible: true,
             secondsVisible: false,
-            fixLeftEdge: true,
-            fixRightEdge: true
+            /* 👇 forzamos HH:MM para que NO ponga 2,2,2 */
+            tickMarkFormatter: (time) => {
+              // time viene en segundos unix
+              const date = new Date(time * 1000);
+              const hh = String(date.getHours()).padStart(2, "0");
+              const mm = String(date.getMinutes()).padStart(2, "0");
+              return `${hh}:${mm}`;
+            }
           }
-        }
-      );
+        });
+      }
+
+      const goldChart = makeChart(document.getElementById("chart-gold"));
+      const goldSeries = goldChart.addCandlestickSeries({
+        upColor: "#00c853",
+        downColor: "#d32f2f",
+        borderUpColor: "#00c853",
+        borderDownColor: "#d32f2f",
+        wickUpColor: "#00c853",
+        wickDownColor: "#d32f2f"
+      });
+
+      const silverChart = makeChart(document.getElementById("chart-silver"));
       const silverSeries = silverChart.addCandlestickSeries({
         upColor: "#00c853",
         downColor: "#d32f2f",
@@ -315,7 +303,6 @@
         wickDownColor: "#d32f2f"
       });
 
-      /* datos simulados cuando no hay API */
       const lastPrices = {
         gold: 4000,
         silver: 48
@@ -326,7 +313,7 @@
         const out = [];
         let last = price;
         for (let i = points; i >= 0; i--) {
-          const t = now - i * 60; // 1 minuto hacia atrás
+          const t = now - i * 60; // cada punto = 1 minuto
           const delta = (Math.random() - 0.5) * (price * volatility);
           const open = last;
           const close = last + delta;
