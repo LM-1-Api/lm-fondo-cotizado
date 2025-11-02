@@ -1,171 +1,400 @@
-<script>
-  // trae los precios desde TU backend en Vercel
-  async function loadSpot() {
-    try {
-      const r = await fetch("/api/spot");
-      const data = await r.json();
-      if (data.gold && data.gold.price) {
-        document.getElementById("gold-price").textContent = "$" + data.gold.price.toFixed(2);
-        document.getElementById("tk-gold").textContent = "$" + data.gold.price.toFixed(2);
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>LM Fondo Cotizado</title>
+    <link
+      rel="preconnect"
+      href="https://unpkg.com"
+    />
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+      :root {
+        --lm-bg: #1a1a1a;
+        --lm-gold: #c6a663;
+        --lm-green: #00c853;
+        --lm-red: #d32f2f;
+        --lm-card: #101010;
       }
-      if (data.silver && data.silver.price) {
-        document.getElementById("silver-price").textContent = "$" + data.silver.price.toFixed(2);
-        document.getElementById("tk-silver").textContent = "$" + data.silver.price.toFixed(2);
+      * {
+        box-sizing: border-box;
       }
-      return data;
-    } catch (e) {
-      console.log("error spot", e);
-      return null;
-    }
-  }
+      body {
+        margin: 0;
+        background: #000;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #fff;
+      }
+      .topbar {
+        background: #000;
+        border-bottom: 1px solid rgba(198, 166, 99, 0.4);
+        padding: 14px 16px 4px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .top-title {
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .top-tickers {
+        margin-left: auto;
+        display: flex;
+        gap: 20px;
+      }
+      .tk {
+        font-size: 13px;
+      }
+      .tk label {
+        opacity: 0.55;
+        margin-right: 4px;
+      }
+      .tk span {
+        color: #00c853;
+        font-weight: 700;
+      }
+      .wrap {
+        padding: 12px 10px 70px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .card {
+        background: #101010;
+        border: 1px solid rgba(198, 166, 99, 0.4);
+        border-radius: 26px;
+        overflow: hidden;
+      }
+      .card-head {
+        padding: 16px 16px 6px 16px;
+      }
+      .title-sm {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+      .subtitle {
+        font-size: 13px;
+        opacity: 0.6;
+      }
+      .big-price {
+        font-size: 38px;
+        font-weight: 800;
+        color: #00c853;
+        margin: 6px 0 12px 0;
+      }
+      .tf-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .tf-btn {
+        background: #000;
+        border: 1px solid transparent;
+        color: #fff;
+        border-radius: 14px;
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+      .tf-btn.active {
+        border-color: #c6a663;
+        background: rgba(198, 166, 99, 0.12);
+      }
+      .chart-container {
+        position: relative;
+        height: 280px;
+        background: #1a1a1a;
+      }
+      .chart-box {
+        position: absolute;
+        inset: 0;
+      }
+      .chart-footer {
+        background: #000;
+        padding: 10px 14px 14px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .chart-footer img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #000;
+        border: 1px solid rgba(198, 166, 99, 0.3);
+        object-fit: contain;
+      }
+      .chart-footer span {
+        font-size: 13px;
+        opacity: 0.8;
+      }
 
-  // genera velas "fake" a partir de un precio base
-  function makeCandlesFromSpot(price, points = 40, volatility = 0.0007) {
-    const now = Math.floor(Date.now() / 1000);
-    const out = [];
-    let last = price;
-    for (let i = points; i >= 0; i--) {
-      const t = now - i * 60;
-      const delta = (Math.random() - 0.5) * (price * volatility);
-      const open = last;
-      const close = last + delta;
-      const high = Math.max(open, close) + price * (volatility * 0.6);
-      const low = Math.min(open, close) - price * (volatility * 0.6);
-      out.push({ time: t, open, high, low, close });
-      last = close;
-    }
-    return out;
-  }
+      /* watermark dentro del gráfico */
+      .lm-watermark {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        width: 32px;
+        height: 32px;
+        opacity: 0.8;
+        object-fit: contain;
+        pointer-events: none;
+      }
 
-  // crea los dos charts
-  const goldChart = LightweightCharts.createChart(document.getElementById("chart-gold"), {
-    layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
-    grid: {
-      vertLines: { color: "rgba(198,166,99,0.05)" },
-      horzLines: { color: "rgba(198,166,99,0.05)" }
-    },
-    rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-    timeScale: { borderColor: "rgba(198,166,99,0.3)" },
-    crosshair: { mode: 0 }
-  });
-  const goldSeries = goldChart.addCandlestickSeries({
-    upColor: "#00c853",
-    downColor: "#d32f2f",
-    borderUpColor: "#00c853",
-    borderDownColor: "#d32f2f",
-    wickUpColor: "#00c853",
-    wickDownColor: "#d32f2f"
-  });
+      @media (min-width: 820px) {
+        .wrap {
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="top-title">LM Fondo Cotizado · USD</div>
+      <div class="top-tickers">
+        <div class="tk">
+          <label>ORO</label><span id="tk-gold">$--</span>
+        </div>
+        <div class="tk">
+          <label>PLATA</label><span id="tk-silver">$--</span>
+        </div>
+      </div>
+    </div>
 
-  const silverChart = LightweightCharts.createChart(document.getElementById("chart-silver"), {
-    layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
-    grid: {
-      vertLines: { color: "rgba(198,166,99,0.05)" },
-      horzLines: { color: "rgba(198,166,99,0.05)" }
-    },
-    rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-    timeScale: { borderColor: "rgba(198,166,99,0.3)" },
-    crosshair: { mode: 0 }
-  });
-  const silverSeries = silverChart.addCandlestickSeries({
-    upColor: "#00c853",
-    downColor: "#d32f2f",
-    borderUpColor: "#00c853",
-    borderDownColor: "#d32f2f",
-    wickUpColor: "#00c853",
-    wickDownColor: "#d32f2f"
-  });
+    <div class="wrap">
+      <!-- ORO -->
+      <div class="card" id="gold-card">
+        <div class="card-head">
+          <div class="title-sm">ORO (XAU/USD)</div>
+          <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
+          <div class="big-price" id="gold-price">$--</div>
+          <div class="tf-row" data-metal="XAU">
+            <button class="tf-btn active" data-tf="1m">1m</button>
+            <button class="tf-btn" data-tf="5m">5m</button>
+            <button class="tf-btn" data-tf="15m">15m</button>
+            <button class="tf-btn" data-tf="1h">1h</button>
+            <button class="tf-btn" data-tf="4h">4h</button>
+            <button class="tf-btn" data-tf="1d">1d</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div id="chart-gold" class="chart-box"></div>
+          <!-- logo dentro -->
+          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+        </div>
+        <div class="chart-footer">
+          <img src="/IMG_2975.png" alt="LM" />
+          <span>LM Fondo Cotizado</span>
+        </div>
+      </div>
 
-  // vamos a guardar los últimos precios para recalcular rápido
-  const lastPrices = {
-    gold: 2350,
-    silver: 28
-  };
+      <!-- PLATA -->
+      <div class="card" id="silver-card">
+        <div class="card-head">
+          <div class="title-sm">PLATA (XAG/USD)</div>
+          <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
+          <div class="big-price" id="silver-price">$--</div>
+          <div class="tf-row" data-metal="XAG">
+            <button class="tf-btn active" data-tf="1m">1m</button>
+            <button class="tf-btn" data-tf="5m">5m</button>
+            <button class="tf-btn" data-tf="15m">15m</button>
+            <button class="tf-btn" data-tf="1h">1h</button>
+            <button class="tf-btn" data-tf="4h">4h</button>
+            <button class="tf-btn" data-tf="1d">1d</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div id="chart-silver" class="chart-box"></div>
+          <!-- logo dentro -->
+          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+        </div>
+        <div class="chart-footer">
+          <img src="/IMG_2975.png" alt="LM" />
+          <span>LM Fondo Cotizado</span>
+        </div>
+      </div>
+    </div>
 
-  // función que aplica timeframe segun metal
-  function applyTimeframe(metal, tf) {
-    // definimos “sensación” de timeframe
-    let points = 40;
-    let vol = 0.0007;
+    <script>
+      // 1) Cargar precios desde el back (tu server.js)
+      async function loadSpot() {
+        try {
+          const r = await fetch("/api/spot");
+          const data = await r.json();
+          if (data.gold && data.gold.price) {
+            document.getElementById("gold-price").textContent =
+              "$" + data.gold.price.toFixed(2);
+            document.getElementById("tk-gold").textContent =
+              "$" + data.gold.price.toFixed(2);
+          }
+          if (data.silver && data.silver.price) {
+            document.getElementById("silver-price").textContent =
+              "$" + data.silver.price.toFixed(2);
+            document.getElementById("tk-silver").textContent =
+              "$" + data.silver.price.toFixed(2);
+          }
+          return data;
+        } catch (e) {
+          console.log("error spot", e);
+          return null;
+        }
+      }
 
-    switch (tf) {
-      case "5m":
-        points = 60;
-        vol = 0.0005;
-        break;
-      case "15m":
-        points = 80;
-        vol = 0.0004;
-        break;
-      case "1h":
-        points = 96;
-        vol = 0.00035;
-        break;
-      case "4h":
-        points = 60;
-        vol = 0.00025;
-        break;
-      case "1d":
-        points = 30;
-        vol = 0.00018;
-        break;
-      default: // 1m
-        points = 40;
-        vol = 0.0007;
-    }
+      // 2) generar velas a partir de spot
+      function makeCandlesFromSpot(price, points = 40, volatility = 0.0007) {
+        const now = Math.floor(Date.now() / 1000);
+        const out = [];
+        let last = price;
+        for (let i = points; i >= 0; i--) {
+          const t = now - i * 60;
+          const delta = (Math.random() - 0.5) * (price * volatility);
+          const open = last;
+          const close = last + delta;
+          const high = Math.max(open, close) + price * (volatility * 0.6);
+          const low = Math.min(open, close) - price * (volatility * 0.6);
+          out.push({ time: t, open, high, low, close });
+          last = close;
+        }
+        return out;
+      }
 
-    if (metal === "XAU") {
-      const data = makeCandlesFromSpot(lastPrices.gold, points, vol);
-      goldSeries.setData(data);
-    } else {
-      const data = makeCandlesFromSpot(lastPrices.silver, points, vol);
-      silverSeries.setData(data);
-    }
-  }
-
-  // listeners de los botones
-  document.querySelectorAll(".tf-row").forEach(row => {
-    const metal = row.getAttribute("data-metal");
-    row.querySelectorAll(".tf-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        // sacar active
-        row.querySelectorAll(".tf-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        const tf = btn.getAttribute("data-tf");
-        applyTimeframe(metal, tf);
+      // 3) crear charts
+      const goldChart = LightweightCharts.createChart(
+        document.getElementById("chart-gold"),
+        {
+          layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
+          grid: {
+            vertLines: { color: "rgba(198,166,99,0.05)" },
+            horzLines: { color: "rgba(198,166,99,0.05)" }
+          },
+          rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
+          timeScale: { borderColor: "rgba(198,166,99,0.3)" },
+          crosshair: { mode: 0 }
+        }
+      );
+      const goldSeries = goldChart.addCandlestickSeries({
+        upColor: "#00c853",
+        downColor: "#d32f2f",
+        borderUpColor: "#00c853",
+        borderDownColor: "#d32f2f",
+        wickUpColor: "#00c853",
+        wickDownColor: "#d32f2f"
       });
-    });
-  });
 
-  // iniciar
-  (async () => {
-    const spot = await loadSpot();
-    if (spot && spot.gold) {
-      lastPrices.gold = spot.gold.price;
-      applyTimeframe("XAU", "1m");
-    } else {
-      applyTimeframe("XAU", "1m");
-    }
+      const silverChart = LightweightCharts.createChart(
+        document.getElementById("chart-silver"),
+        {
+          layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
+          grid: {
+            vertLines: { color: "rgba(198,166,99,0.05)" },
+            horzLines: { color: "rgba(198,166,99,0.05)" }
+          },
+          rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
+          timeScale: { borderColor: "rgba(198,166,99,0.3)" },
+          crosshair: { mode: 0 }
+        }
+      );
+      const silverSeries = silverChart.addCandlestickSeries({
+        upColor: "#00c853",
+        downColor: "#d32f2f",
+        borderUpColor: "#00c853",
+        borderDownColor: "#d32f2f",
+        wickUpColor: "#00c853",
+        wickDownColor: "#d32f2f"
+      });
 
-    if (spot && spot.silver) {
-      lastPrices.silver = spot.silver.price;
-      applyTimeframe("XAG", "1m");
-    } else {
-      applyTimeframe("XAG", "1m");
-    }
-  })();
+      // guardamos último spot
+      const lastPrices = {
+        gold: 4000,
+        silver: 50
+      };
 
-  // refrescar spot cada 60s, pero mantener el timeframe que el user eligió
-  setInterval(async () => {
-    const spot = await loadSpot();
-    if (spot && spot.gold) lastPrices.gold = spot.gold.price;
-    if (spot && spot.silver) lastPrices.silver = spot.silver.price;
+      function applyTimeframe(metal, tf) {
+        let points = 40;
+        let vol = 0.0007;
 
-    // ver qué timeframe está activo en cada uno
-    const goldActive = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute("data-tf") || "1m";
-    const silverActive = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute("data-tf") || "1m";
+        switch (tf) {
+          case "5m":
+            points = 60;
+            vol = 0.0005;
+            break;
+          case "15m":
+            points = 80;
+            vol = 0.0004;
+            break;
+          case "1h":
+            points = 96;
+            vol = 0.00035;
+            break;
+          case "4h":
+            points = 60;
+            vol = 0.00025;
+            break;
+          case "1d":
+            points = 30;
+            vol = 0.00018;
+            break;
+        }
 
-    applyTimeframe("XAU", goldActive);
-    applyTimeframe("XAG", silverActive);
-  }, 60000);
-</script>
+        if (metal === "XAU") {
+          const data = makeCandlesFromSpot(lastPrices.gold, points, vol);
+          goldSeries.setData(data);
+        } else {
+          const data = makeCandlesFromSpot(lastPrices.silver, points, vol);
+          silverSeries.setData(data);
+        }
+      }
+
+      // click en botones
+      document.querySelectorAll(".tf-row").forEach((row) => {
+        const metal = row.getAttribute("data-metal");
+        row.querySelectorAll(".tf-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            row.querySelectorAll(".tf-btn").forEach((b) =>
+              b.classList.remove("active")
+            );
+            btn.classList.add("active");
+            const tf = btn.getAttribute("data-tf");
+            applyTimeframe(metal, tf);
+          });
+        });
+      });
+
+      (async () => {
+        const spot = await loadSpot();
+        if (spot && spot.gold) {
+          lastPrices.gold = spot.gold.price;
+        }
+        if (spot && spot.silver) {
+          lastPrices.silver = spot.silver.price;
+        }
+        applyTimeframe("XAU", "1m");
+        applyTimeframe("XAG", "1m");
+      })();
+
+      // refresca cada 60s y mantiene timeframe
+      setInterval(async () => {
+        const spot = await loadSpot();
+        if (spot && spot.gold) lastPrices.gold = spot.gold.price;
+        if (spot && spot.silver) lastPrices.silver = spot.silver.price;
+
+        const goldActive =
+          document
+            .querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')
+            ?.getAttribute("data-tf") || "1m";
+        const silverActive =
+          document
+            .querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')
+            ?.getAttribute("data-tf") || "1m";
+
+        applyTimeframe("XAU", goldActive);
+        applyTimeframe("XAG", silverActive);
+      }, 60000);
+    </script>
+  </body>
+</html>
