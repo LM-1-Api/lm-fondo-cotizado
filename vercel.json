@@ -1,14 +1,23 @@
 {
   "version": 2,
   "builds": [
-    { "src": "server.js", "use": "@vercel/node" },
-    { "src": "index.html", "use": "@vercel/static" },
-    { "src": "IMG_2975.png", "use": "@vercel/static" }
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
-    { "src": "/gold", "dest": "/server.js" },
-    { "src": "/silver", "dest": "/server.js" },
-    { "src": "/IMG_2975.png", "dest": "/IMG_2975.png" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "src": "/api/spot",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
