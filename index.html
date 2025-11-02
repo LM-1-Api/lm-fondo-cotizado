@@ -8,7 +8,6 @@
     />
     <title>LM Fondo Cotizado</title>
 
-    <!-- Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -19,9 +18,7 @@
         --lm-green: #00c853;
         --lm-red: #d32f2f;
       }
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         background: #000;
@@ -30,88 +27,39 @@
       }
       .topbar {
         background: #000;
-        border-bottom: 1px solid rgba(198, 166, 99, 0.4);
+        border-bottom: 1px solid rgba(198,166,99,0.4);
         padding: 14px 16px 6px 16px;
         display: flex;
         gap: 12px;
         align-items: center;
       }
-      .top-title {
-        font-weight: 700;
-        letter-spacing: 0.04em;
-      }
-      .top-tickers {
-        margin-left: auto;
-        display: flex;
-        gap: 18px;
-      }
-      .tk {
-        font-size: 13px;
-      }
-      .tk label {
-        opacity: 0.55;
-        margin-right: 4px;
-      }
-      .tk span {
-        color: var(--lm-green);
-        font-weight: 700;
-      }
-      .wrap {
-        padding: 12px 10px 70px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
+      .top-title { font-weight: 700; letter-spacing: .04em; }
+      .top-tickers { margin-left: auto; display: flex; gap: 18px; }
+      .tk { font-size: 13px; }
+      .tk label { opacity: .55; margin-right: 4px; }
+      .tk span { color: var(--lm-green); font-weight: 700; }
+
+      .wrap { padding: 12px 10px 70px 10px; display: flex; flex-direction: column; gap: 14px; }
       .card {
         background: #101010;
-        border: 1px solid rgba(198, 166, 99, 0.35);
+        border: 1px solid rgba(198,166,99,.35);
         border-radius: 26px;
         overflow: hidden;
       }
-      .card-head {
-        padding: 16px 16px 6px 16px;
-      }
-      .title-sm {
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-      }
-      .subtitle {
-        font-size: 13px;
-        opacity: 0.6;
-      }
-      .big-price {
-        font-size: 42px;
-        font-weight: 800;
-        color: var(--lm-green);
-        margin: 6px 0 12px 0;
-      }
-      .tf-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 6px;
-      }
+      .card-head { padding: 16px 16px 6px 16px; }
+      .title-sm { font-size: 15px; font-weight: 700; letter-spacing: .03em; }
+      .subtitle { font-size: 13px; opacity: .6; }
+      .big-price { font-size: 42px; font-weight: 800; color: var(--lm-green); margin: 6px 0 12px; }
+      .tf-row { display: flex; gap: 8px; margin-bottom: 6px; }
       .tf-btn {
-        background: #000;
-        border: 1px solid transparent;
-        color: #fff;
-        border-radius: 14px;
-        padding: 6px 13px;
-        font-size: 14px;
+        background: #000; border: 1px solid transparent; color: #fff;
+        border-radius: 14px; padding: 6px 13px; font-size: 14px;
       }
-      .tf-btn.active {
-        border-color: var(--lm-gold);
-        background: rgba(198, 166, 99, 0.08);
-      }
-      .chart-container {
-        position: relative;
-        height: 280px;
-        background: #1a1a1a;
-      }
-      .chart-box {
-        position: absolute;
-        inset: 0;
-      }
+      .tf-btn.active { border-color: var(--lm-gold); background: rgba(198,166,99,.08); }
+
+      .chart-container { position: relative; height: 280px; background: #1a1a1a; }
+      .chart-box { position: absolute; inset: 0; }
+
       /* 👇 logo dentro del gráfico */
       .lm-watermark {
         position: absolute;
@@ -120,26 +68,23 @@
         width: 38px;
         height: 38px;
         object-fit: contain;
-        opacity: 0.95;
+        opacity: .95;
         pointer-events: none;
         z-index: 10;
       }
+
       .chart-footer {
         background: #000;
-        padding: 8px 16px 12px 16px;
+        padding: 8px 16px 12px;
         font-size: 13px;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
-      .updated {
-        opacity: 0.6;
-      }
+      .updated { opacity: .6; }
+
       @media (min-width: 820px) {
-        .wrap {
-          max-width: 1180px;
-          margin: 0 auto;
-        }
+        .wrap { max-width: 1180px; margin: 0 auto; }
       }
     </style>
   </head>
@@ -147,12 +92,8 @@
     <div class="topbar">
       <div class="top-title">LM Fondo Cotizado · USD</div>
       <div class="top-tickers">
-        <div class="tk">
-          <label>ORO</label><span id="tk-gold">$--</span>
-        </div>
-        <div class="tk">
-          <label>PLATA</label><span id="tk-silver">$--</span>
-        </div>
+        <div class="tk"><label>ORO</label><span id="tk-gold">$--</span></div>
+        <div class="tk"><label>PLATA</label><span id="tk-silver">$--</span></div>
       </div>
     </div>
 
@@ -174,14 +115,12 @@
         </div>
         <div class="chart-container">
           <div id="chart-gold" class="chart-box"></div>
-          <!-- usa el nombre EXACTO del repo -->
-          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+          <!-- 👇 ruta relativa -->
+          <img src="IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
           <span>LM Fondo Cotizado</span>
-          <span class="updated" id="gold-updated"
-            >Actualizado: --/--/---- --:--</span
-          >
+          <span class="updated" id="gold-updated">Actualizado: --/--/---- --:--</span>
         </div>
       </div>
 
@@ -202,19 +141,17 @@
         </div>
         <div class="chart-container">
           <div id="chart-silver" class="chart-box"></div>
-          <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+          <!-- 👇 ruta relativa -->
+          <img src="IMG_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
           <span>LM Fondo Cotizado</span>
-          <span class="updated" id="silver-updated"
-            >Actualizado: --/--/---- --:--</span
-          >
+          <span class="updated" id="silver-updated">Actualizado: --/--/---- --:--</span>
         </div>
       </div>
     </div>
 
     <script>
-      /* ====== helpers ====== */
       function formatDate(d) {
         const dd = String(d.getDate()).padStart(2, "0");
         const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -224,29 +161,24 @@
         return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
       }
 
-      /* ====== precios desde tu /api/spot ====== */
       async function loadSpot() {
         try {
           const r = await fetch("/api/spot");
-          if (!r.ok) throw new Error("bad response");
+          if (!r.ok) throw new Error("bad resp");
           const data = await r.json();
 
           if (data.gold && data.gold.price) {
             const p = Number(data.gold.price);
-            document.getElementById("gold-price").textContent =
-              "$" + p.toFixed(2);
-            document.getElementById("tk-gold").textContent =
-              "$" + p.toFixed(2);
+            document.getElementById("gold-price").textContent = "$" + p.toFixed(2);
+            document.getElementById("tk-gold").textContent = "$" + p.toFixed(2);
             document.getElementById("gold-updated").textContent =
               "Actualizado: " + formatDate(new Date());
             lastPrices.gold = p;
           }
           if (data.silver && data.silver.price) {
             const p = Number(data.silver.price);
-            document.getElementById("silver-price").textContent =
-              "$" + p.toFixed(2);
-            document.getElementById("tk-silver").textContent =
-              "$" + p.toFixed(2);
+            document.getElementById("silver-price").textContent = "$" + p.toFixed(2);
+            document.getElementById("tk-silver").textContent = "$" + p.toFixed(2);
             document.getElementById("silver-updated").textContent =
               "Actualizado: " + formatDate(new Date());
             lastPrices.silver = p;
@@ -258,7 +190,6 @@
         }
       }
 
-      /* ====== charts ====== */
       function makeChart(container) {
         return LightweightCharts.createChart(container, {
           layout: { background: { color: "#1a1a1a" }, textColor: "#fff" },
@@ -270,13 +201,10 @@
           timeScale: {
             borderColor: "rgba(198,166,99,0.3)",
             timeVisible: true,
-            secondsVisible: false,
-            /* 👇 forzamos HH:MM para que NO ponga 2,2,2 */
             tickMarkFormatter: (time) => {
-              // time viene en segundos unix
-              const date = new Date(time * 1000);
-              const hh = String(date.getHours()).padStart(2, "0");
-              const mm = String(date.getMinutes()).padStart(2, "0");
+              const d = new Date(time * 1000);
+              const hh = String(d.getHours()).padStart(2, "0");
+              const mm = String(d.getMinutes()).padStart(2, "0");
               return `${hh}:${mm}`;
             }
           }
@@ -303,17 +231,14 @@
         wickDownColor: "#d32f2f"
       });
 
-      const lastPrices = {
-        gold: 4000,
-        silver: 48
-      };
+      const lastPrices = { gold: 4000, silver: 48 };
 
       function makeCandlesFromSpot(price, points = 40, volatility = 0.0007) {
         const now = Math.floor(Date.now() / 1000);
         const out = [];
         let last = price;
         for (let i = points; i >= 0; i--) {
-          const t = now - i * 60; // cada punto = 1 minuto
+          const t = now - i * 60;
           const delta = (Math.random() - 0.5) * (price * volatility);
           const open = last;
           const close = last + delta;
@@ -326,78 +251,46 @@
       }
 
       function applyTimeframe(metal, tf) {
-        let points = 40;
-        let vol = 0.0007;
+        let points = 40, vol = 0.0007;
         switch (tf) {
-          case "5m":
-            points = 60;
-            vol = 0.0005;
-            break;
-          case "15m":
-            points = 80;
-            vol = 0.0004;
-            break;
-          case "1h":
-            points = 96;
-            vol = 0.00035;
-            break;
-          case "4h":
-            points = 60;
-            vol = 0.00025;
-            break;
-          case "1d":
-            points = 30;
-            vol = 0.00018;
-            break;
+          case "5m": points = 60; vol = 0.0005; break;
+          case "15m": points = 80; vol = 0.0004; break;
+          case "1h": points = 96; vol = 0.00035; break;
+          case "4h": points = 60; vol = 0.00025; break;
+          case "1d": points = 30; vol = 0.00018; break;
         }
         if (metal === "XAU") {
           goldSeries.setData(makeCandlesFromSpot(lastPrices.gold, points, vol));
         } else {
-          silverSeries.setData(
-            makeCandlesFromSpot(lastPrices.silver, points, vol)
-          );
+          silverSeries.setData(makeCandlesFromSpot(lastPrices.silver, points, vol));
         }
       }
 
-      /* botones de timeframe */
       document.querySelectorAll(".tf-row").forEach((row) => {
         const metal = row.getAttribute("data-metal");
         row.querySelectorAll(".tf-btn").forEach((btn) => {
           btn.addEventListener("click", () => {
-            row.querySelectorAll(".tf-btn").forEach((b) =>
-              b.classList.remove("active")
-            );
+            row.querySelectorAll(".tf-btn").forEach((b) => b.classList.remove("active"));
             btn.classList.add("active");
-            const tf = btn.getAttribute("data-tf");
-            applyTimeframe(metal, tf);
+            applyTimeframe(metal, btn.getAttribute("data-tf"));
           });
         });
       });
 
-      /* primer load */
       (async () => {
         const spot = await loadSpot();
-        if (spot && spot.gold && spot.gold.price) {
-          lastPrices.gold = Number(spot.gold.price);
-        }
-        if (spot && spot.silver && spot.silver.price) {
-          lastPrices.silver = Number(spot.silver.price);
-        }
+        if (spot?.gold?.price) lastPrices.gold = Number(spot.gold.price);
+        if (spot?.silver?.price) lastPrices.silver = Number(spot.silver.price);
         applyTimeframe("XAU", "1m");
         applyTimeframe("XAG", "1m");
       })();
 
-      /* refresco cada 60s */
       setInterval(async () => {
-        const spot = await loadSpot();
+        await loadSpot();
         const gtf =
-          document
-            .querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')
-            ?.getAttribute("data-tf") || "1m";
+          document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.dataset.tf || "1m";
         const stf =
-          document
-            .querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')
-            ?.getAttribute("data-tf") || "1m";
+          document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.dataset.tf || "1m";
         applyTimeframe("XAU", gtf);
         applyTimeframe("XAG", stf);
       }, 60000);
