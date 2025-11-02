@@ -8,6 +8,7 @@
     />
     <title>LM Fondo Cotizado</title>
 
+    <!-- lightweight charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -111,6 +112,7 @@
         position: absolute;
         inset: 0;
       }
+      /* 👇 logo adentro del gráfico */
       .lm-watermark {
         position: absolute;
         left: 8px;
@@ -120,6 +122,7 @@
         object-fit: contain;
         opacity: 0.9;
         pointer-events: none;
+        z-index: 10; /* <- para que quede arriba de las velas */
       }
       .chart-footer {
         background: #000;
@@ -154,6 +157,7 @@
     </div>
 
     <div class="wrap">
+      <!-- ORO -->
       <div class="card" id="gold-card">
         <div class="card-head">
           <div class="title-sm">ORO (XAU/USD)</div>
@@ -170,6 +174,7 @@
         </div>
         <div class="chart-container">
           <div id="chart-gold" class="chart-box"></div>
+          <!-- usa el archivo que subiste en minúsculas -->
           <img src="/img_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
@@ -180,6 +185,7 @@
         </div>
       </div>
 
+      <!-- PLATA -->
       <div class="card" id="silver-card">
         <div class="card-head">
           <div class="title-sm">PLATA (XAG/USD)</div>
@@ -208,6 +214,7 @@
     </div>
 
     <script>
+      /* ================= UTILS ================== */
       function formatDate(d) {
         const dd = String(d.getDate()).padStart(2, "0");
         const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -217,6 +224,7 @@
         return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
       }
 
+      /* ============== CARGA DE PRECIOS ============== */
       async function loadSpot() {
         try {
           const r = await fetch("/api/spot");
@@ -252,6 +260,7 @@
         }
       }
 
+      /* ============== CHARTS ============== */
       const goldChart = LightweightCharts.createChart(
         document.getElementById("chart-gold"),
         {
@@ -261,7 +270,13 @@
             horzLines: { color: "rgba(198,166,99,0.05)" }
           },
           rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-          timeScale: { borderColor: "rgba(198,166,99,0.3)" }
+          timeScale: {
+            borderColor: "rgba(198,166,99,0.3)",
+            timeVisible: true,       // 👈 muestra hora
+            secondsVisible: false,
+            fixLeftEdge: true,
+            fixRightEdge: true
+          }
         }
       );
       const goldSeries = goldChart.addCandlestickSeries({
@@ -282,7 +297,13 @@
             horzLines: { color: "rgba(198,166,99,0.05)" }
           },
           rightPriceScale: { borderColor: "rgba(198,166,99,0.3)" },
-          timeScale: { borderColor: "rgba(198,166,99,0.3)" }
+          timeScale: {
+            borderColor: "rgba(198,166,99,0.3)",
+            timeVisible: true,
+            secondsVisible: false,
+            fixLeftEdge: true,
+            fixRightEdge: true
+          }
         }
       );
       const silverSeries = silverChart.addCandlestickSeries({
@@ -294,6 +315,7 @@
         wickDownColor: "#d32f2f"
       });
 
+      /* datos simulados cuando no hay API */
       const lastPrices = {
         gold: 4000,
         silver: 48
@@ -304,7 +326,7 @@
         const out = [];
         let last = price;
         for (let i = points; i >= 0; i--) {
-          const t = now - i * 60;
+          const t = now - i * 60; // 1 minuto hacia atrás
           const delta = (Math.random() - 0.5) * (price * volatility);
           const open = last;
           const close = last + delta;
@@ -350,6 +372,7 @@
         }
       }
 
+      /* botones de timeframe */
       document.querySelectorAll(".tf-row").forEach((row) => {
         const metal = row.getAttribute("data-metal");
         row.querySelectorAll(".tf-btn").forEach((btn) => {
@@ -364,6 +387,7 @@
         });
       });
 
+      /* primer load */
       (async () => {
         const spot = await loadSpot();
         if (spot && spot.gold && spot.gold.price) {
@@ -376,6 +400,7 @@
         applyTimeframe("XAG", "1m");
       })();
 
+      /* refresco cada 60s */
       setInterval(async () => {
         const spot = await loadSpot();
         const gtf =
