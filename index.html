@@ -8,7 +8,6 @@
     />
     <title>LM Fondo Cotizado</title>
 
-    <!-- librería de velas -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 
     <style>
@@ -112,7 +111,6 @@
         position: absolute;
         inset: 0;
       }
-      /* logo DENTRO del gráfico */
       .lm-watermark {
         position: absolute;
         left: 8px;
@@ -131,26 +129,9 @@
         justify-content: space-between;
         align-items: center;
       }
-      .chart-footer .left {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-      .badge-lm {
-        width: 32px;
-        height: 32px;
-        border: 1px solid rgba(198, 166, 99, 0.4);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        color: #c6a663;
-      }
       .updated {
         opacity: 0.6;
       }
-
       @media (min-width: 820px) {
         .wrap {
           max-width: 1180px;
@@ -160,7 +141,6 @@
     </style>
   </head>
   <body>
-    <!-- barra superior -->
     <div class="topbar">
       <div class="top-title">LM Fondo Cotizado · USD</div>
       <div class="top-tickers">
@@ -174,7 +154,6 @@
     </div>
 
     <div class="wrap">
-      <!-- CARD ORO -->
       <div class="card" id="gold-card">
         <div class="card-head">
           <div class="title-sm">ORO (XAU/USD)</div>
@@ -191,18 +170,16 @@
         </div>
         <div class="chart-container">
           <div id="chart-gold" class="chart-box"></div>
-          <!-- logo DENTRO -->
           <img src="/img_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
-          <div class="left">
-            <span>LM Fondo Cotizado</span>
-          </div>
-          <div class="updated" id="gold-updated">Actualizado: --/--/---- --:--</div>
+          <span>LM Fondo Cotizado</span>
+          <span class="updated" id="gold-updated"
+            >Actualizado: --/--/---- --:--</span
+          >
         </div>
       </div>
 
-      <!-- CARD PLATA -->
       <div class="card" id="silver-card">
         <div class="card-head">
           <div class="title-sm">PLATA (XAG/USD)</div>
@@ -219,22 +196,18 @@
         </div>
         <div class="chart-container">
           <div id="chart-silver" class="chart-box"></div>
-          <!-- logo DENTRO -->
           <img src="/img_2975.png" alt="LM" class="lm-watermark" />
         </div>
         <div class="chart-footer">
-          <div class="left">
-            <span>LM Fondo Cotizado</span>
-          </div>
-          <div class="updated" id="silver-updated">
-            Actualizado: --/--/---- --:--
-          </div>
+          <span>LM Fondo Cotizado</span>
+          <span class="updated" id="silver-updated"
+            >Actualizado: --/--/---- --:--</span
+          >
         </div>
       </div>
     </div>
 
     <script>
-      // --------- helpers ----------
       function formatDate(d) {
         const dd = String(d.getDate()).padStart(2, "0");
         const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -279,7 +252,6 @@
         }
       }
 
-      // --------- charts ----------
       const goldChart = LightweightCharts.createChart(
         document.getElementById("chart-gold"),
         {
@@ -378,7 +350,6 @@
         }
       }
 
-      // listeners de los botones
       document.querySelectorAll(".tf-row").forEach((row) => {
         const metal = row.getAttribute("data-metal");
         row.querySelectorAll(".tf-btn").forEach((btn) => {
@@ -393,9 +364,8 @@
         });
       });
 
-      // primera carga
       (async () => {
-        const spot = await loadSpot(); // intenta traer de /api/spot
+        const spot = await loadSpot();
         if (spot && spot.gold && spot.gold.price) {
           lastPrices.gold = Number(spot.gold.price);
         }
@@ -406,7 +376,6 @@
         applyTimeframe("XAG", "1m");
       })();
 
-      // refrescar cada 60s
       setInterval(async () => {
         const spot = await loadSpot();
         const gtf =
