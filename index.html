@@ -1,114 +1,316 @@
-<script>
-  // 👑 TU SERVIDOR QUE SÍ ANDA
-  const API_BASE = "https://lm-fondo-cotizado.vercel.app"; // <- este es el bueno
-
-  // 1) crear gráficos
-  const goldChart = LightweightCharts.createChart(document.getElementById('chart-gold'), {
-    layout: { background: { color: "#101010" }, textColor: "#ffffff" },
-    grid: {
-      vertLines: { color: "rgba(198,166,99,0.05)" },
-      horzLines: { color: "rgba(198,166,99,0.05)" }
-    },
-    rightPriceScale: { borderColor: "rgba(198,166,99,0.35)" },
-    timeScale: { borderColor: "rgba(198,166,99,0.35)" }
-  });
-  const goldSeries = goldChart.addCandlestickSeries({
-    upColor: "#00c853",
-    downColor: "#d32f2f",
-    borderUpColor: "#00c853",
-    borderDownColor: "#d32f2f",
-    wickUpColor: "#00c853",
-    wickDownColor: "#d32f2f"
-  });
-
-  const silverChart = LightweightCharts.createChart(document.getElementById('chart-silver'), {
-    layout: { background: { color: "#101010" }, textColor: "#ffffff" },
-    grid: {
-      vertLines: { color: "rgba(198,166,99,0.05)" },
-      horzLines: { color: "rgba(198,166,99,0.05)" }
-    },
-    rightPriceScale: { borderColor: "rgba(198,166,99,0.35)" },
-    timeScale: { borderColor: "rgba(198,166,99,0.35)" }
-  });
-  const silverSeries = silverChart.addCandlestickSeries({
-    upColor: "#00c853",
-    downColor: "#d32f2f",
-    borderUpColor: "#00c853",
-    borderDownColor: "#d32f2f",
-    wickUpColor: "#00c853",
-    wickDownColor: "#d32f2f"
-  });
-
-  // 2) pedir al backend (tus rutas reales)
-  async function cargarOro() {
-    try {
-      const res = await fetch(`${API_BASE}/gold`);
-      const data = await res.json();
-      // data.price  y data.candles  ← como lo tenías cuando “quedó joya”
-      document.getElementById("gold-price").textContent = "$" + data.price;
-      document.getElementById("top-gold").textContent = "$" + data.price;
-      if (Array.isArray(data.candles)) {
-        goldSeries.setData(data.candles);
-      }
-    } catch (e) {
-      console.warn("No pude cargar ORO", e);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>LM Fondo Cotizado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- librería de velas -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root {
+      --lm-bg: #000;
+      --lm-panel: #101010;
+      --lm-gold: #c6a663;
+      --lm-green: #00c853;
     }
-  }
-
-  async function cargarPlata() {
-    try {
-      const res = await fetch(`${API_BASE}/silver`);
-      const data = await res.json();
-      document.getElementById("silver-price").textContent = "$" + data.price;
-      document.getElementById("top-silver").textContent = "$" + data.price;
-      if (Array.isArray(data.candles)) {
-        silverSeries.setData(data.candles);
-      }
-    } catch (e) {
-      console.warn("No pude cargar PLATA", e);
+    body {
+      margin: 0;
+      background: var(--lm-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #fff;
     }
-  }
+    header {
+      background: #000;
+      border-bottom: 1px solid rgba(198,166,99,.25);
+      padding: 14px 12px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header .title {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+    header .tickers {
+      margin-left: auto;
+      display: flex;
+      gap: 16px;
+      font-size: .78rem;
+      align-items: center;
+    }
+    .ticker-label { opacity: .6; font-size: .68rem; }
+    .ticker-value { color: #00c853; font-weight: 700; }
 
-  // 3) botones de timeframe (visual, porque tu backend ahora mismo no cambia por tf)
-  document.querySelectorAll(".tf-row").forEach(row => {
-    row.addEventListener("click", (e) => {
-      const btn = e.target.closest(".tf-btn");
-      if (!btn) return;
-      row.querySelectorAll(".tf-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      // si después tu backend acepta ?tf=..., acá lo activamos de nuevo
-    });
-  });
+    .page {
+      padding: 14px 10px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--lm-panel);
+      border: 1px solid rgba(198,166,99,.4);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 16px 14px 4px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .card-sub {
+      font-size: .75rem;
+      color: rgba(255,255,255,.65);
+      margin-top: 3px;
+    }
+    .card-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #00c853;
+      margin-top: 10px;
+    }
+    .tf-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 14px 8px;
+    }
+    .tf-btn {
+      background: #000;
+      border: 1px solid rgba(198,166,99,.1);
+      border-radius: 12px;
+      padding: 7px 14px 6px;
+      color: #fff;
+      font-size: .78rem;
+    }
+    .tf-btn.active {
+      border-color: var(--lm-gold);
+      background: rgba(198,166,99,.08);
+    }
+    /* 👇 el gráfico ahora es relativo para meter el logo adentro */
+    .chart-body {
+      position: relative;
+      height: 240px;
+      background: #101010;
+    }
+    /* 👇 logo adentro del gráfico */
+    .chart-watermark {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      opacity: 0.95;
+      pointer-events: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.4));
+    }
+    .chart-brand {
+      padding: 8px 12px 8px;
+      border-top: 1px solid rgba(198,166,99,.12);
+      font-size: .72rem;
+      color: rgba(255,255,255,.7);
+      letter-spacing: .03em;
+    }
+    /* 👇 fecha afuera del gráfico (abajo del card) */
+    .chart-time {
+      font-size: .66rem;
+      color: rgba(255,255,255,.38);
+      margin: 3px 0 0 6px;
+    }
 
-  // 4) reloj en tiempo real abajo de cada panel
-  function actualizarRelojLM(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const ahora = new Date();
-    const fecha = ahora.toLocaleDateString("es-AR", {
-      timeZone: "America/Argentina/Buenos_Aires",
-      day: "2-digit", month: "2-digit", year: "numeric"
+    @media (min-width: 850px) {
+      .page { flex-direction: row; }
+      .card { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">LM Fondo Cotizado · USD</div>
+    <div class="tickers">
+      <div>
+        <div class="ticker-label">ORO</div>
+        <div id="top-gold" class="ticker-value">$--</div>
+      </div>
+      <div>
+        <div class="ticker-label">PLATA</div>
+        <div id="top-silver" class="ticker-value">$--</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <!-- ORO -->
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title">ORO (XAU/USD)</div>
+        <div class="card-sub">Tiempo real · LM Fondo Cotizado</div>
+        <div id="gold-price" class="card-price">$--</div>
+      </div>
+      <div class="tf-row" data-metal="XAU">
+        <button class="tf-btn active" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="1h">1h</button>
+        <button class="tf-btn" data-tf="4h">4h</button>
+        <button class="tf-btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-body" id="chart-gold">
+        <!-- 👇 logo adentro del gráfico -->
+        <img src="./IMG_2975.png" alt="LM" class="chart-watermark">
+      </div>
+      <div class="chart-brand">LM Fondo Cotizado</div>
+      <!-- 👇 fecha afuera -->
+      <div class="chart-time" id="gold-time">Actualizado: --/--/---- · --:--:-- · LM</div>
+    </section>
+
+    <!-- PLATA -->
+    <section class="card">
+      <div class="card-head">
+        <div class="card-title">PLATA (XAG/USD)</div>
+        <div class="card-sub">Tiempo real · LM Fondo Cotizado</div>
+        <div id="silver-price" class="card-price">$--</div>
+      </div>
+      <div class="tf-row" data-metal="XAG">
+        <button class="tf-btn active" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="1h">1h</button>
+        <button class="tf-btn" data-tf="4h">4h</button>
+        <button class="tf-btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-body" id="chart-silver">
+        <!-- 👇 logo adentro del gráfico -->
+        <img src="./IMG_2975.png" alt="LM" class="chart-watermark">
+      </div>
+      <div class="chart-brand">LM Fondo Cotizado</div>
+      <!-- 👇 fecha afuera -->
+      <div class="chart-time" id="silver-time">Actualizado: --/--/---- · --:--:-- · LM</div>
+    </section>
+  </main>
+
+  <script>
+    // tu backend actual
+    const API_BASE = "https://lm-fondo-cotizado.vercel.app";
+
+    // crear chart de oro
+    const goldChart = LightweightCharts.createChart(document.getElementById('chart-gold'), {
+      layout: { background: { color: "#101010" }, textColor: "#ffffff" },
+      grid: {
+        vertLines: { color: "rgba(198,166,99,0.05)" },
+        horzLines: { color: "rgba(198,166,99,0.05)" }
+      },
+      rightPriceScale: { borderColor: "rgba(198,166,99,0.35)" },
+      timeScale: { borderColor: "rgba(198,166,99,0.35)" }
     });
-    const hora = ahora.toLocaleTimeString("es-AR", {
-      timeZone: "America/Argentina/Buenos_Aires",
-      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    const goldSeries = goldChart.addCandlestickSeries({
+      upColor: "#00c853",
+      downColor: "#d32f2f",
+      borderUpColor: "#00c853",
+      borderDownColor: "#d32f2f",
+      wickUpColor: "#00c853",
+      wickDownColor: "#d32f2f"
     });
-    el.textContent = `Actualizado: ${fecha} · ${hora} · LM`;
-  }
-  actualizarRelojLM("gold-time");
-  actualizarRelojLM("silver-time");
-  setInterval(() => {
+
+    // crear chart de plata
+    const silverChart = LightweightCharts.createChart(document.getElementById('chart-silver'), {
+      layout: { background: { color: "#101010" }, textColor: "#ffffff" },
+      grid: {
+        vertLines: { color: "rgba(198,166,99,0.05)" },
+        horzLines: { color: "rgba(198,166,99,0.05)" }
+      },
+      rightPriceScale: { borderColor: "rgba(198,166,99,0.35)" },
+      timeScale: { borderColor: "rgba(198,166,99,0.35)" }
+    });
+    const silverSeries = silverChart.addCandlestickSeries({
+      upColor: "#00c853",
+      downColor: "#d32f2f",
+      borderUpColor: "#00c853",
+      borderDownColor: "#d32f2f",
+      wickUpColor: "#00c853",
+      wickDownColor: "#d32f2f"
+    });
+
+    async function cargarOro() {
+      try {
+        const res = await fetch(`${API_BASE}/gold`);
+        const data = await res.json();
+        if (data.price) {
+          document.getElementById("gold-price").textContent = "$" + data.price;
+          document.getElementById("top-gold").textContent = "$" + data.price;
+        }
+        if (Array.isArray(data.candles)) {
+          goldSeries.setData(data.candles);
+        }
+      } catch (err) {
+        console.warn("error oro", err);
+      }
+    }
+
+    async function cargarPlata() {
+      try {
+        const res = await fetch(`${API_BASE}/silver`);
+        const data = await res.json();
+        if (data.price) {
+          document.getElementById("silver-price").textContent = "$" + data.price;
+          document.getElementById("top-silver").textContent = "$" + data.price;
+        }
+        if (Array.isArray(data.candles)) {
+          silverSeries.setData(data.candles);
+        }
+      } catch (err) {
+        console.warn("error plata", err);
+      }
+    }
+
+    // reloj LM afuera
+    function actualizarRelojLM(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const ahora = new Date();
+      const fecha = ahora.toLocaleDateString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+      const hora = ahora.toLocaleTimeString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+      el.textContent = "Actualizado: " + fecha + " · " + hora + " · LM";
+    }
     actualizarRelojLM("gold-time");
     actualizarRelojLM("silver-time");
-  }, 1000);
+    setInterval(() => {
+      actualizarRelojLM("gold-time");
+      actualizarRelojLM("silver-time");
+    }, 1000);
 
-  // 5) primera carga
-  cargarOro();
-  cargarPlata();
+    // tiempos (dejamos activos)
+    document.querySelectorAll(".tf-row").forEach(row => {
+      row.addEventListener("click", (e) => {
+        const btn = e.target.closest(".tf-btn");
+        if (!btn) return;
+        row.querySelectorAll(".tf-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        // cuando tu back acepte ?tf=... lo enchufamos acá
+      });
+    });
 
-  // 6) refresco cada 30s
-  setInterval(() => {
+    // primera carga + refresco
     cargarOro();
     cargarPlata();
-  }, 30000);
-</script>
+    setInterval(() => {
+      cargarOro();
+      cargarPlata();
+    }, 30000);
+  </script>
+</body>
+</html>
