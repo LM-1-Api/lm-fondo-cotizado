@@ -6,29 +6,23 @@
   <title>LM Fondo Cotizado</title>
   <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    :root { --lm-bg:#1a1a1a; --lm-gold:#c6a663; --lm-green:#00c853; --lm-red:#d32f2f; --lm-card:#101010; }
-    *{ box-sizing:border-box }
-    body{ margin:0; background:#000; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#fff }
-    .topbar{ background:#000; border-bottom:1px solid rgba(198,166,99,.4); padding:14px 16px 4px; display:flex; align-items:center; gap:10px }
-    .top-title{ font-weight:700; letter-spacing:.04em }
-    .top-tickers{ margin-left:auto; display:flex; gap:20px }
-    .tk{ font-size:13px } .tk label{ opacity:.55; margin-right:4px } .tk span{ color:#00c853; font-weight:700 }
-    .wrap{ padding:12px 10px 70px; display:flex; flex-direction:column; gap:14px }
-    .card{ background:#101010; border:1px solid rgba(198,166,99,.4); border-radius:26px; overflow:hidden }
-    .card-head{ padding:16px 16px 6px }
-    .title-sm{ font-size:15px; font-weight:700; letter-spacing:.03em }
-    .subtitle{ font-size:13px; opacity:.6 }
-    .big-price{ font-size:38px; font-weight:800; color:#00c853; margin:6px 0 12px }
-    .tf-row{ display:flex; gap:8px; margin-bottom:12px }
-    .tf-btn{ background:#000; border:1px solid transparent; color:#fff; border-radius:14px; padding:6px 12px; font-size:14px }
-    .tf-btn.active{ border-color:#c6a663; background:rgba(198,166,99,.12) }
-    .chart-container{ position:relative; height:280px; background:#1a1a1a }
-    .chart-box{ position:absolute; inset:0 }
-    .chart-footer{ background:#000; padding:10px 14px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px }
-    .chart-footer span{ font-size:13px; opacity:.85 }
-    .brand{ font-size:16px; opacity:.9 }
-    .lm-watermark{ position:absolute; left:10px; bottom:10px; width:28px; height:28px; opacity:.9; object-fit:contain; pointer-events:none }
-    @media(min-width:820px){ .wrap{ max-width:1180px; margin:0 auto } }
+    :root{--lm-bg:#000;--lm-card:#101010;--lm-gold:#c6a663;--lm-green:#00c853;--lm-red:#d32f2f}
+    *{box-sizing:border-box} body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .topbar{display:flex;gap:10px;align-items:center;padding:14px 16px 6px;border-bottom:1px solid rgba(198,166,99,.35)}
+    .top-title{font-weight:800;letter-spacing:.03em}
+    .top-tickers{margin-left:auto;display:flex;gap:18px}.tk{font-size:13px}.tk label{opacity:.6;margin-right:4px}.tk span{color:var(--lm-green);font-weight:800}
+    .wrap{padding:12px 10px 70px;display:flex;flex-direction:column;gap:14px}
+    .card{background:var(--lm-card);border:1px solid rgba(198,166,99,.35);border-radius:26px;overflow:hidden}
+    .card-head{padding:16px 16px 8px}
+    .title-sm{font-size:15px;font-weight:800;letter-spacing:.02em}.subtitle{font-size:13px;opacity:.7}
+    .big-price{font-size:38px;font-weight:900;color:var(--lm-green);margin:6px 0 12px}
+    .tf-row{display:flex;gap:8px;margin-bottom:12px}.tf-btn{background:#000;border:1px solid transparent;color:#fff;border-radius:14px;padding:6px 12px;font-size:14px}
+    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
+    .chart-container{position:relative;height:280px;background:#1a1a1a}
+    .chart-box{position:absolute;inset:0}
+    .lm-watermark{position:absolute;left:8px;bottom:8px;width:30px;height:30px;opacity:.9;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 2px #000)}
+    .chart-footer{display:flex;justify-content:space-between;align-items:center;background:#000;padding:10px 14px 14px;font-size:13px;opacity:.9}
+    @media(min-width:820px){.wrap{max-width:1180px;margin:0 auto}}
   </style>
 </head>
 <body>
@@ -42,7 +36,7 @@
 
   <div class="wrap">
     <!-- ORO -->
-    <div class="card" id="gold-card">
+    <div class="card">
       <div class="card-head">
         <div class="title-sm">ORO (XAU/USD)</div>
         <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
@@ -58,16 +52,16 @@
       </div>
       <div class="chart-container">
         <div id="chart-gold" class="chart-box"></div>
-        <img src="lm.png" alt="LM" class="lm-watermark">
+        <img class="lm-watermark" src="./IMG_2975.png?v=2" alt="LM" />
       </div>
       <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span id="gold-updated">Actualizado: --/--/---- --:--</span>
+        <span>LM Fondo Cotizado</span>
+        <span id="gold-upd">Actualizado: --/--/---- --:--</span>
       </div>
     </div>
 
     <!-- PLATA -->
-    <div class="card" id="silver-card">
+    <div class="card">
       <div class="card-head">
         <div class="title-sm">PLATA (XAG/USD)</div>
         <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
@@ -83,101 +77,103 @@
       </div>
       <div class="chart-container">
         <div id="chart-silver" class="chart-box"></div>
-        <img src="lm.png" alt="LM" class="lm-watermark">
+        <img class="lm-watermark" src="./IMG_2975.png?v=2" alt="LM" />
       </div>
       <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span id="silver-updated">Actualizado: --/--/---- --:--</span>
+        <span>LM Fondo Cotizado</span>
+        <span id="silver-upd">Actualizado: --/--/---- --:--</span>
       </div>
     </div>
   </div>
 
   <script>
-    // ---------- util ----------
-    function pad(n){ return n<10 ? '0'+n : ''+n; }
-    function fmtDateTime(tsSec){
-      const d = new Date((tsSec || Date.now()/1000)*1000);
+    // --- util ---
+    const fmtTS = (ts) => {
+      const d = new Date(typeof ts === 'number' ? ts*1000 : ts);
+      const pad = (n) => (n<10 ? '0'+n : n);
       return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
+    };
 
-    // ---------- precios ----------
-    async function loadSpot(){
-      try{
-        const r = await fetch('/api/spot', { cache:'no-store' });
+    // --- API spot ---
+    async function loadSpot() {
+      try {
+        const r = await fetch('/api/spot');
+        if (!r.ok) throw new Error('API ' + r.status);
         const data = await r.json();
-
-        if (data?.gold?.price){
-          const v = Number(data.gold.price);
-          document.getElementById('gold-price').textContent = '$' + v.toFixed(2);
-          document.getElementById('tk-gold').textContent    = '$' + v.toFixed(2);
-          document.getElementById('gold-updated').textContent = 'Actualizado: ' + fmtDateTime(data.gold.ts);
-          lastPrices.gold = v;
+        // Topbar + big price
+        if (data.gold?.price) {
+          const p = Number(data.gold.price);
+          document.getElementById('tk-gold').textContent   = '$' + p.toFixed(2);
+          document.getElementById('gold-price').textContent= '$' + p.toFixed(2);
+          if (data.gold.updatedAt) document.getElementById('gold-upd').textContent = 'Actualizado: ' + fmtTS(data.gold.updatedAt);
+          lastPrices.gold = p;
         }
-        if (data?.silver?.price){
-          const v = Number(data.silver.price);
-          document.getElementById('silver-price').textContent = '$' + v.toFixed(2);
-          document.getElementById('tk-silver').textContent    = '$' + v.toFixed(2);
-          document.getElementById('silver-updated').textContent = 'Actualizado: ' + fmtDateTime(data.silver.ts);
-          lastPrices.silver = v;
+        if (data.silver?.price) {
+          const p = Number(data.silver.price);
+          document.getElementById('tk-silver').textContent    = '$' + p.toFixed(2);
+          document.getElementById('silver-price').textContent = '$' + p.toFixed(2);
+          if (data.silver.updatedAt) document.getElementById('silver-upd').textContent = 'Actualizado: ' + fmtTS(data.silver.updatedAt);
+          lastPrices.silver = p;
         }
         return data;
-      }catch(e){
-        console.log('error spot', e);
+      } catch (e) {
+        console.log('spot error', e);
         return null;
       }
     }
 
-    // ---------- charts ----------
-    function makeChart(el){
-      const c = LightweightCharts.createChart(el, {
-        layout:{ background:{ color:'#1a1a1a' }, textColor:'#fff' },
-        grid:{ vertLines:{ color:'rgba(198,166,99,.05)' }, horzLines:{ color:'rgba(198,166,99,.05)' } },
-        rightPriceScale:{ borderColor:'rgba(198,166,99,.3)' },
-        timeScale:{ borderColor:'rgba(198,166,99,.3)' }
-      });
-      const s = c.addCandlestickSeries({
-        upColor:'#00c853', downColor:'#d32f2f',
-        borderUpColor:'#00c853', borderDownColor:'#d32f2f',
-        wickUpColor:'#00c853', wickDownColor:'#d32f2f'
-      });
-      return { c, s };
-    }
-
-    function makeCandlesFromSpot(price, points=60, vol=0.0006){
+    // --- candles (simulados a partir del spot) ---
+    function makeCandlesFromSpot(price, points=40, vol=0.0007, stepSec=60) {
       const now = Math.floor(Date.now()/1000);
       const out = [];
-      let last = price || 4000;
-      for(let i=points; i>=0; i--){
-        const t = now - i*60;
-        const delta = (Math.random()-0.5) * (price*vol);
+      let last = price;
+      for (let i = points; i >= 0; i--) {
+        const time = now - i*stepSec;
+        const delta = (Math.random()-0.5) * price * vol;
         const open = last;
         const close = last + delta;
         const high = Math.max(open, close) + price*(vol*0.6);
         const low  = Math.min(open, close) - price*(vol*0.6);
-        out.push({ time:t, open, high, low, close });
+        out.push({ time, open, high, low, close });
         last = close;
       }
       return out;
     }
 
-    const gold   = makeChart(document.getElementById('chart-gold'));
-    const silver = makeChart(document.getElementById('chart-silver'));
+    // --- charts ---
+    function buildChart(elId) {
+      const chart = LightweightCharts.createChart(document.getElementById(elId), {
+        layout: { background: { color: '#1a1a1a' }, textColor: '#fff' },
+        grid: { vertLines:{ color:'rgba(198,166,99,.05)' }, horzLines:{ color:'rgba(198,166,99,.05)' } },
+        rightPriceScale: { borderColor: 'rgba(198,166,99,.3)' },
+        timeScale: { borderColor: 'rgba(198,166,99,.3)', timeVisible: true, secondsVisible: false }
+      });
+      const series = chart.addCandlestickSeries({
+        upColor:'#00c853', downColor:'#d32f2f', borderUpColor:'#00c853',
+        borderDownColor:'#d32f2f', wickUpColor:'#00c853', wickDownColor:'#d32f2f'
+      });
+      return { chart, series };
+    }
+
+    const gold = buildChart('chart-gold');
+    const silver = buildChart('chart-silver');
 
     const lastPrices = { gold: 4000, silver: 50 };
 
-    function applyTimeframe(metal, tf){
-      let points=60, vol=0.0006;
-      if(tf==='5m'){ points=60; vol=0.0005; }
-      if(tf==='15m'){ points=80; vol=0.0004; }
-      if(tf==='1h'){ points=96; vol=0.00035; }
-      if(tf==='4h'){ points=60; vol=0.00025; }
-      if(tf==='1d'){ points=30; vol=0.00018; }
+    function applyTF(metal, tf) {
+      let points=40, vol=0.0007, step=60;
+      if (tf==='5m'){ points=60; vol=0.0005; step=300; }
+      else if (tf==='15m'){ points=80; vol=0.0004; step=900; }
+      else if (tf==='1h'){ points=96; vol=0.00035; step=3600; }
+      else if (tf==='4h'){ points=60; vol=0.00025; step=14400; }
+      else if (tf==='1d'){ points=30; vol=0.00018; step=86400; }
 
-      if(metal==='XAU'){
-        gold.s.setData(makeCandlesFromSpot(lastPrices.gold, points, vol));
-      }else{
-        silver.s.setData(makeCandlesFromSpot(lastPrices.silver, points, vol));
-      }
+      const data = makeCandlesFromSpot(
+        metal==='XAU' ? lastPrices.gold : lastPrices.silver,
+        points, vol, step
+      );
+
+      (metal==='XAU' ? gold.series : silver.series).setData(data);
     }
 
     document.querySelectorAll('.tf-row').forEach(row=>{
@@ -186,26 +182,24 @@
         btn.addEventListener('click', ()=>{
           row.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
-          applyTimeframe(metal, btn.getAttribute('data-tf'));
+          applyTF(metal, btn.getAttribute('data-tf'));
         });
       });
     });
 
-    // primer render + refresco cada 60s
-    (async ()=>{
-      const spot = await loadSpot();
-      if (spot?.gold?.price)   lastPrices.gold   = spot.gold.price;
-      if (spot?.silver?.price) lastPrices.silver = spot.silver.price;
-      applyTimeframe('XAU','1m');
-      applyTimeframe('XAG','1m');
+    // init
+    (async () => {
+      await loadSpot();
+      applyTF('XAU','1m');
+      applyTF('XAG','1m');
     })();
 
+    // refresco cada 60s
     setInterval(async ()=>{
-      const spot = await loadSpot();
+      await loadSpot();
       const gtf = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
       const stf = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
-      applyTimeframe('XAU', gtf);
-      applyTimeframe('XAG', stf);
+      applyTF('XAU', gtf); applyTF('XAG', stf);
     }, 60000);
   </script>
 </body>
