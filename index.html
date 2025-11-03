@@ -7,64 +7,29 @@
 <link rel="preconnect" href="https://unpkg.com">
 <style>
   :root{
-    --bg:#1A1A1A;
-    --card:#101010;
-    --ring:#2a2416;       /* borde con leve dorado oscuro */
-    --text:#F2F2F2;
-    --muted:#9aa0a6;
-    --green:#00C853;
-    --gold:#C6A663;
+    --bg:#1A1A1A; --card:#101010; --ring:#2a2416;
+    --text:#F2F2F2; --muted:#9aa0a6; --green:#00C853;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
-  }
-  .topbar{
-    position:sticky;top:0;z-index:5;
-    background:linear-gradient(180deg,#151515,transparent);
-    padding:14px 18px 8px;border-bottom:1px solid #2a2a2a;
-  }
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+  .topbar{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,#151515,transparent);padding:14px 18px 8px;border-bottom:1px solid #2a2a2a}
   .brandline{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
   .brandline h1{margin:0;font-size:22px;line-height:1.15;font-weight:800}
   .inline-tickers{display:flex;gap:18px;font-weight:700}
-  .inline-tickers .label{color:var(--muted);font-weight:600;margin-right:6px}
+  .inline-tickers .label{color:var(--muted);margin-right:6px}
   .inline-tickers .val{color:var(--green)}
   .grid{max-width:980px;margin:14px auto;padding:0 14px;display:grid;gap:18px}
-  .card{
-    background:linear-gradient(180deg,#111 0%, #0b0b0b 100%);
-    border:1px solid var(--ring);
-    border-radius:18px;padding:18px;
-    box-shadow:0 0 0 1px #000 inset;
-  }
+  .card{background:linear-gradient(180deg,#111 0%, #0b0b0b 100%);border:1px solid var(--ring);border-radius:18px;padding:18px;box-shadow:0 0 0 1px #000 inset}
   .title{font-size:22px;font-weight:900;margin:0 0 2px}
   .subtitle{color:var(--muted);font-size:14px;margin-bottom:8px}
-  .big{
-    font-weight:900;font-size:56px;letter-spacing:0.5px;color:var(--green);
-    line-height:1;margin:10px 0 8px;
-  }
-
+  .big{font-weight:900;font-size:56px;color:var(--green);line-height:1;margin:10px 0 8px}
   .btns{display:flex;gap:10px;margin:8px 0 10px}
-  .btn{
-    background:#000;border:1px solid #333;border-radius:14px;padding:8px 14px;
-    font-weight:700;color:#ddd;opacity:.85
-  }
+  .btn{background:#000;border:1px solid #333;border-radius:14px;padding:8px 14px;font-weight:700;color:#ddd;opacity:.85}
   .btn.active{border-color:#6b5b32;box-shadow:inset 0 0 0 1px #7b6938}
-  .chart-wrap{
-    position:relative;border-radius:12px;border:1px solid #282828;background:#0c0c0c;
-    padding:6px;height:380px;
-  }
-  .chart{position:absolute;inset:6px 6px 6px 6px}
-  .lm-watermark{
-    position:absolute;left:16px;bottom:16px;width:44px;height:auto;
-    opacity:.5;filter:grayscale(1) contrast(1.05) brightness(1.1);
-    pointer-events:none;user-select:none;
-  }
-
-  .footer{
-    display:flex;justify-content:space-between;
-    margin-top:10px;font-weight:800
-  }
+  .chart-wrap{position:relative;border-radius:12px;border:1px solid #282828;background:#0c0c0c;padding:6px;height:380px}
+  .chart{position:absolute;inset:6px}
+  .lm-watermark{position:absolute;left:16px;bottom:16px;width:44px;height:auto;opacity:.5;filter:grayscale(1) contrast(1.05) brightness(1.1);pointer-events:none;user-select:none}
+  .footer{display:flex;justify-content:space-between;margin-top:10px;font-weight:800}
   .muted{color:var(--muted);font-weight:600}
 </style>
 </head>
@@ -83,18 +48,18 @@
   <div class="grid">
 
     <!-- ORO -->
-    <div class="card" id="gold-card">
+    <div class="card">
       <div class="title">ORO (XAU/USD)</div>
       <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
       <div id="gold-spot" class="big">$--</div>
 
       <div class="btns" data-sym="XAUUSD">
         <button class="btn active" data-i="1m">1m</button>
-        <button class="btn" data-i="5m" disabled>5m</button>
-        <button class="btn" data-i="15m" disabled>15m</button>
-        <button class="btn" data-i="1h" disabled>1h</button>
-        <button class="btn" data-i="4h" disabled>4h</button>
-        <button class="btn" data-i="1d" disabled>1d</button>
+        <button class="btn" disabled>5m</button>
+        <button class="btn" disabled>15m</button>
+        <button class="btn" disabled>1h</button>
+        <button class="btn" disabled>4h</button>
+        <button class="btn" disabled>1d</button>
       </div>
 
       <div class="chart-wrap">
@@ -109,18 +74,18 @@
     </div>
 
     <!-- PLATA -->
-    <div class="card" id="silver-card">
+    <div class="card">
       <div class="title">PLATA (XAG/USD)</div>
       <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
       <div id="silver-spot" class="big">$--</div>
 
       <div class="btns" data-sym="XAGUSD">
         <button class="btn active" data-i="1m">1m</button>
-        <button class="btn" data-i="5m" disabled>5m</button>
-        <button class="btn" data-i="15m" disabled>15m</button>
-        <button class="btn" data-i="1h" disabled>1h</button>
-        <button class="btn" data-i="4h" disabled>4h</button>
-        <button class="btn" data-i="1d" disabled>1d</button>
+        <button class="btn" disabled>5m</button>
+        <button class="btn" disabled>15m</button>
+        <button class="btn" disabled>1h</button>
+        <button class="btn" disabled>4h</button>
+        <button class="btn" disabled>1d</button>
       </div>
 
       <div class="chart-wrap">
@@ -136,27 +101,21 @@
 
   </div>
 
-  <!-- Lightweight Charts (TradingView) -->
   <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <script>
-    const fmtMoney = (n) => {
-      return "$" + (Number(n).toFixed(2));
-    };
-    const fmtTS = (ms) => {
-      const d = new Date(ms);
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const yyyy = d.getFullYear();
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mi = String(d.getMinutes()).padStart(2,"0");
-      return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+    const fmtMoney = n => "$" + Number(n).toFixed(2);
+    const fmtTS = ms => {
+      const d = new Date(ms); const dd=String(d.getDate()).padStart(2,"0");
+      const mm=String(d.getMonth()+1).padStart(2,"0"); const yy=d.getFullYear();
+      const hh=String(d.getHours()).padStart(2,"0"); const mi=String(d.getMinutes()).padStart(2,"0");
+      return `${dd}/${mm}/${yy} ${hh}:${mi}`;
     };
 
-    async function fetchSpot(symbol){
+    async function getSpot(symbol){
       const r = await fetch(`/api/spot?symbol=${symbol}`, { cache:"no-store" });
       return r.json();
     }
-    async function fetchCandles(symbol, interval="1m", limit=240){
+    async function getCandles(symbol, interval="1m", limit=240){
       const r = await fetch(`/api/candles?symbol=${symbol}&interval=${interval}&limit=${limit}`, { cache:"no-store" });
       return r.json();
     }
@@ -169,7 +128,8 @@
         grid: { vertLines: { color: '#262626' }, horzLines: { color: '#262626' } }
       });
       const series = chart.addCandlestickSeries({
-        upColor: '#00C853', downColor:'#E53935', borderVisible:false, wickUpColor:'#00C853', wickDownColor:'#E53935'
+        upColor:'#00C853', downColor:'#E53935', borderVisible:false,
+        wickUpColor:'#00C853', wickDownColor:'#E53935'
       });
       return { chart, series };
     }
@@ -177,40 +137,32 @@
     const goldChart = buildChart(document.getElementById('chart-gold'));
     const silverChart = buildChart(document.getElementById('chart-silver'));
 
-    async function boot(symbol, ids, chartObj){
-      // Spot
-      const spot = await fetchSpot(symbol);
+    async function renderAll(symbol, ids, ch){
+      const spot = await getSpot(symbol);
       if (spot?.ok) {
         document.getElementById(ids.spot).textContent = fmtMoney(spot.price);
-        document.getElementById(ids.ts).textContent   = fmtTS(spot.ts);
-        const tickerId = (symbol==="XAUUSD") ? "t-gold" : "t-silver";
-        document.getElementById(tickerId).textContent = fmtMoney(spot.price);
+        document.getElementById(ids.ts).textContent = fmtTS(spot.ts);
+        document.getElementById(ids.ticker).textContent = fmtMoney(spot.price);
       }
 
-      // Candles
-      const c = await fetchCandles(symbol, "1m", 240);
+      const c = await getCandles(symbol, "1m", 240);
       if (c?.ok && Array.isArray(c.candles)) {
-        // lightweight-charts espera time en segundos (epoch)
-        chartObj.series.setData(c.candles);
+        ch.series.setData(c.candles);
       }
     }
 
-    // Primer render
-    boot("XAUUSD", {spot:"gold-spot", ts:"gold-ts"}, goldChart);
-    boot("XAGUSD", {spot:"silver-spot", ts:"silver-ts"}, silverChart);
+    renderAll("XAUUSD", {spot:"gold-spot", ts:"gold-ts", ticker:"t-gold"}, goldChart);
+    renderAll("XAGUSD", {spot:"silver-spot", ts:"silver-ts", ticker:"t-silver"}, silverChart);
 
-    // Actualización periódica del spot (cada 25 s)
-    setInterval(() => boot("XAUUSD", {spot:"gold-spot", ts:"gold-ts"}, goldChart), 25000);
-    setInterval(() => boot("XAGUSD", {spot:"silver-spot", ts:"silver-ts"}, silverChart), 25000);
+    // refresco de spot/candles cada 25s (si usas intradía real, se verá minuto a minuto)
+    setInterval(() => renderAll("XAUUSD", {spot:"gold-spot", ts:"gold-ts", ticker:"t-gold"}, goldChart), 25000);
+    setInterval(() => renderAll("XAGUSD", {spot:"silver-spot", ts:"silver-ts", ticker:"t-silver"}, silverChart), 25000);
 
-    // Botones de timeframe (por ahora 1m fijo visual + estado activo)
-    document.querySelectorAll('.btns').forEach(group=>{
-      group.addEventListener('click', (e)=>{
-        const b = e.target.closest('button');
-        if(!b) return;
-        group.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
-        b.classList.add('active');
-        // Si mañana habilitamos otros intervalos, acá llamamos a fetchCandles con b.dataset.i
+    document.querySelectorAll('.btns').forEach(g=>{
+      g.addEventListener('click', e=>{
+        const b=e.target.closest('button'); if(!b) return;
+        g.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+        // futuro: cambiar interval aquí cuando tengas intradía real
       });
     });
   </script>
