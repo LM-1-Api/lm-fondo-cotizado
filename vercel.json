@@ -1,14 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/*.js": { "runtime": "nodejs18.x", "maxDuration": 10 }
-  },
-  "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" },
-    { "src": "index.html", "use": "@vercel/static" }
-  ],
   "routes": [
-    { "src": "/api/spot", "dest": "api/spot.js" },
+    { "src": "/api/(.*)", "dest": "/server.js" },
+
+    { "src": "/(.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js))", "dest": "/$1" },
+
+    { "src": "/", "dest": "/index.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
