@@ -1,90 +1,50 @@
-// /api/spot.js
-// Node 18+ en Vercel: fetch global disponible
+// /api/spot.js  — Vercel Serverless Function (Node 18+)
 
-// === PONÉ TUS KEYS EN VARIABLES DE ENTORNO DE VERCEL ===
-// METALPRICE_KEY_1, METALPRICE_KEY_2, GOLDAPI_KEY
-// (si querés, podés dejar hardcodeadas acá en "FALLBACK_*", pero no es lo ideal)
+export default async function handler(req, res) {
+  // Permite probar directo en el navegador sin CORS molestando
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-const FALLBACK_METALPRICE_KEY_1 = "a06ea2dec055d0e31754673ee846dff2";
-const FALLBACK_METALPRICE_KEY_2 = "386d0a353a350f94eaf305714cde7c46";
-// Por si querés usar también GoldAPI como último respaldo:
-const FALLBACK_GOLDAPI_KEY = "goldapi-3szmoxgsmgo1ms8o-io";
+  // TUS KEYS de Metalprice (puedes moverlas a ENV luego)
+  const KEYS = [
+    process.env.METALPRICE_KEY_1 || 'a06ea2dec055d0e31754673ee846dff2',
+    process.env.METALPRICE_KEY_2 || '386d0a353a350f94eaf305714cde7c46'
+  ].filter(Boolean);
 
-function two(n) {
-  return Math.round(n * 100) / 100;
-}
-
-async function getFromMetalprice(apiKey) {
-  const url = `https://api.metalpriceapi.com/v1/latest?api_key=${apiKey}&base=USD&currencies=XAU,XAG`;
-  const r = await fetch(url, { cache: "no-store" });
-  if (!r.ok) throw new Error(`metalprice ${r.status}`);
-  const j = await r.json();
-  if (!j?.rates?.XAU || !j?.rates?.XAG) throw new Error("metalprice bad body");
-  // metalprice devuelve tasas de conversión. Para USD->XAU hay que invertir:
-  const xauUsd = 1 / j.rates.XAU;
-  const xagUsd = 1 / j.rates.XAG;
-  return {
-    provider: "metalprice",
-    gold: two(xauUsd),
-    silver: two(xagUsd),
-  };
-}
-
-async function getFromGoldAPI(apiKey) {
-  const headers = {
-    "x-access-token": apiKey,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-  const rg = await fetch("https://www.goldapi.io/api/XAU/USD", { headers });
-  if (!rg.ok) throw new Error(`goldapi gold ${rg.status}`);
-  const jg = await rg.json();
-
-  const rs = await fetch("https://www.goldapi.io/api/XAG/USD", { headers });
-  if (!rs.ok) throw new Error(`goldapi silver ${rs.status}`);
-  const js = await rs.json();
-
-  return {
-    provider: "goldapi",
-    gold: two(jg.price),
-    silver: two(js.price),
-  };
-}
-
-module.exports = async (req, res) => {
-  // CORS básico por si abrís desde otros dominios
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store");
-
-  const mp1 = process.env.METALPRICE_KEY_1 || FALLBACK_METALPRICE_KEY_1;
-  const mp2 = process.env.METALPRICE_KEY_2 || FALLBACK_METALPRICE_KEY_2;
-  const gk  = process.env.GOLDAPI_KEY       || FALLBACK_GOLDAPI_KEY;
-
-  try {
-    // 1) metalprice key 1
-    try {
-      const d = await getFromMetalprice(mp1);
-      return res.status(200).json({ ...d, at: new Date().toISOString() });
-    } catch (e) {}
-
-    // 2) metalprice key 2
-    try {
-      const d = await getFromMetalprice(mp2);
-      return res.status(200).json({ ...d, at: new Date().toISOString() });
-    } catch (e) {}
-
-    // 3) fallback goldapi (si existe)
-    if (gk) {
-      const d = await getFromGoldAPI(gk);
-      return res.status(200).json({ ...d, at: new Date().toISOString() });
+  async function fetchFromMetalprice(key) {
+    const url = `https://api.metalpriceapi.com/v1/latest?api_key=${key}&base=USD&currencies=XAU,XAG`;
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) {
+      const txt = await r.text().catch(()=>'');
+      throw new Error(`Metalprice ${r.status}: ${txt || r.statusText}`);
     }
-
-    throw new Error("No provider worked");
-  } catch (err) {
-    console.error("spot error:", err);
-    return res.status(502).json({
-      error: "upstream_failed",
-      message: String(err?.message || err),
-    });
+    const j = await r.json();
+    // Metalprice entrega "rates" como XAU = cantidad de XAU por 1 USD -> hay que invertir
+    const xau = j?.rates?.XAU;
+    const xag = j?.rates?.XAG;
+    if (!xau || !xag) throw new Error('Respuesta sin rates XAU/XAG');
+    const goldUsd  = 1 / Number(xau);
+    const silverUsd= 1 / Number(xag);
+    return {
+      gold:  { price: Number(goldUsd.toFixed(2)) },
+      silver:{ price: Number(silverUsd.toFixed(2)) },
+      ts: j?.timestamp ? j.timestamp * 1000 : Date.now(),
+      source: 'metalprice'
+    };
   }
-};
+
+  // probamos con todas las keys hasta que una responda
+  try {
+    let out = null, lastError = null;
+    for (const k of KEYS) {
+      try { out = await fetchFromMetalprice(k); break; }
+      catch (e) { lastError = e; console.error('[spot] key fail:', e.message); }
+    }
+    if (!out) throw lastError || new Error('Sin claves válidas');
+
+    res.status(200).json(out);
+  } catch (e) {
+    console.error('[spot] fatal:', e.message);
+    res.status(500).json({ error: e.message || 'internal_error' });
+  }
+}
