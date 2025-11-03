@@ -2,9 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/api/spot", "dest": "/api/spot.js" },
-
     { "src": "/(.*)\\.(css|js|png|jpg|jpeg|gif|svg|webp|ico)", "dest": "/$1.$2" },
-
     { "src": "/", "dest": "/index.html" }
   ]
 }
