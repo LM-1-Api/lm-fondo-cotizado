@@ -1,58 +1,52 @@
-// /api/spot.js
-// Función serverless para traer XAU/USD y XAG/USD desde GoldAPI
+// api/spot.js
+// Serverless function para traer precios de GoldAPI con un pequeño cache
+// para evitar rate limits (TTL ~ 55s).
 
-const BASE = 'https://www.goldapi.io/api';
-const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
+let CACHE = { t: 0, data: null };
 
 export default async function handler(req, res) {
   try {
+    // TTL: 55s
+    const now = Date.now();
+    if (CACHE.data && now - CACHE.t < 55000) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json(CACHE.data);
+    }
+
+    const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
     const headers = {
       'x-access-token': KEY,
-      'Accept': 'application/json'
+      'Content-Type': 'application/json',
     };
 
-    // Pedimos en paralelo
-    const [gr, sr] = await Promise.all([
-      fetch(`${BASE}/XAU/USD`, { headers }),
-      fetch(`${BASE}/XAG/USD`, { headers }),
+    const [xauRes, xagRes] = await Promise.all([
+      fetch('https://www.goldapi.io/api/XAU/USD', { headers, cache: 'no-store' }),
+      fetch('https://www.goldapi.io/api/XAG/USD', { headers, cache: 'no-store' }),
     ]);
 
-    if (!gr.ok || !sr.ok) {
-      const e = `GoldAPI status XAU:${gr.status} XAG:${sr.status}`;
-      return res.status(502).json({ error: e });
+    const xau = await xauRes.json();
+    const xag = await xagRes.json();
+
+    if (xau?.error || xag?.error) {
+      return res.status(200).json({
+        error: xau?.error || xag?.error || 'GOLDAPI_ERROR',
+        raw: { xau, xag },
+      });
     }
 
-    const g = await gr.json();
-    const s = await sr.json();
+    const goldPrice   = Number(xau?.price);
+    const silverPrice = Number(xag?.price);
 
-    // GoldAPI a veces entrega otras keys. Normalizamos:
-    const toNumber = (v) => (v == null ? null : Number(v));
-    const oz = 31.1035;
+    const payload = {
+      updatedAt: now,
+      gold:   { price: isFinite(goldPrice)   ? goldPrice   : null },
+      silver: { price: isFinite(silverPrice) ? silverPrice : null },
+    };
 
-    const goldPrice =
-      toNumber(g.price) ??
-      (g.price_gram_24k ? Number(g.price_gram_24k) * oz : null);
-
-    const silverPrice =
-      toNumber(s.price) ??
-      (s.price_gram_999 ? Number(s.price_gram_999) * oz : null);
-
-    if (!goldPrice || !silverPrice) {
-      return res.status(500).json({ error: 'GoldAPI: precio no disponible' });
-    }
-
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
-    res.status(200).json({
-      gold: {
-        price: goldPrice,
-        updatedAt: g.timestamp || g.updated_at || Date.now()
-      },
-      silver: {
-        price: silverPrice,
-        updatedAt: s.timestamp || s.updated_at || Date.now()
-      }
-    });
+    CACHE = { t: now, data: payload };
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json(payload);
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    return res.status(200).json({ error: 'SERVER_ERROR', message: String(err) });
   }
 }
