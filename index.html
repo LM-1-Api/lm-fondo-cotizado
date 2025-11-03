@@ -1,230 +1,218 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>LM Fondo Cotizado · USD</title>
-  <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-  <style>
-    :root{
-      --lm-bg:#1a1a1a; --lm-gold:#c6a663; --lm-green:#00c853; --lm-red:#d32f2f; --lm-card:#101010;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .topbar{background:#000;border-bottom:1px solid rgba(198,166,99,.4);padding:14px 16px 4px;display:flex;align-items:center;gap:10px}
-    .top-title{font-weight:800;letter-spacing:.04em}
-    .top-tickers{margin-left:auto;display:flex;gap:20px}
-    .tk{font-size:13px}.tk label{opacity:.55;margin-right:4px}.tk span{color:var(--lm-green);font-weight:800}
-    .wrap{padding:12px 10px 70px;display:flex;flex-direction:column;gap:14px}
-    .card{background:#101010;border:1px solid rgba(198,166,99,.4);border-radius:26px;overflow:hidden}
-    .card-head{padding:16px 16px 6px}
-    .title-sm{font-size:15px;font-weight:800;letter-spacing:.03em}
-    .subtitle{font-size:13px;opacity:.6}
-    .big-price{font-size:38px;font-weight:900;color:var(--lm-green);margin:6px 0 12px}
-    .tf-row{display:flex;gap:8px;margin-bottom:12px}
-    .tf-btn{background:#000;border:1px solid transparent;color:#fff;border-radius:14px;padding:6px 12px;font-size:14px}
-    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
-    .chart-container{position:relative;height:280px;background:#1a1a1a}
-    .chart-box{position:absolute;inset:0}
-    .lm-watermark{position:absolute;left:10px;bottom:10px;width:32px;height:32px;opacity:.92;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
-    .chart-footer{background:#000;padding:10px 14px 14px;display:flex;align-items:center;gap:8px}
-    .chart-footer img{width:28px;height:28px;border-radius:6px;background:#000;border:1px solid rgba(198,166,99,.3);object-fit:contain}
-    .chart-footer span{font-size:13px;opacity:.85}
-    .brand{font-weight:900}
-    .ts{margin-left:auto;opacity:.75}
-    @media (min-width:820px){.wrap{max-width:1180px;margin:0 auto}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LM Fondo Cotizado • USD</title>
+<link rel="preconnect" href="https://unpkg.com">
+<style>
+  :root{
+    --bg:#1A1A1A;
+    --card:#101010;
+    --ring:#2a2416;       /* borde con leve dorado oscuro */
+    --text:#F2F2F2;
+    --muted:#9aa0a6;
+    --green:#00C853;
+    --gold:#C6A663;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+  }
+  .topbar{
+    position:sticky;top:0;z-index:5;
+    background:linear-gradient(180deg,#151515,transparent);
+    padding:14px 18px 8px;border-bottom:1px solid #2a2a2a;
+  }
+  .brandline{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+  .brandline h1{margin:0;font-size:22px;line-height:1.15;font-weight:800}
+  .inline-tickers{display:flex;gap:18px;font-weight:700}
+  .inline-tickers .label{color:var(--muted);font-weight:600;margin-right:6px}
+  .inline-tickers .val{color:var(--green)}
+  .grid{max-width:980px;margin:14px auto;padding:0 14px;display:grid;gap:18px}
+  .card{
+    background:linear-gradient(180deg,#111 0%, #0b0b0b 100%);
+    border:1px solid var(--ring);
+    border-radius:18px;padding:18px;
+    box-shadow:0 0 0 1px #000 inset;
+  }
+  .title{font-size:22px;font-weight:900;margin:0 0 2px}
+  .subtitle{color:var(--muted);font-size:14px;margin-bottom:8px}
+  .big{
+    font-weight:900;font-size:56px;letter-spacing:0.5px;color:var(--green);
+    line-height:1;margin:10px 0 8px;
+  }
+
+  .btns{display:flex;gap:10px;margin:8px 0 10px}
+  .btn{
+    background:#000;border:1px solid #333;border-radius:14px;padding:8px 14px;
+    font-weight:700;color:#ddd;opacity:.85
+  }
+  .btn.active{border-color:#6b5b32;box-shadow:inset 0 0 0 1px #7b6938}
+  .chart-wrap{
+    position:relative;border-radius:12px;border:1px solid #282828;background:#0c0c0c;
+    padding:6px;height:380px;
+  }
+  .chart{position:absolute;inset:6px 6px 6px 6px}
+  .lm-watermark{
+    position:absolute;left:16px;bottom:16px;width:44px;height:auto;
+    opacity:.5;filter:grayscale(1) contrast(1.05) brightness(1.1);
+    pointer-events:none;user-select:none;
+  }
+
+  .footer{
+    display:flex;justify-content:space-between;
+    margin-top:10px;font-weight:800
+  }
+  .muted{color:var(--muted);font-weight:600}
+</style>
 </head>
 <body>
+
   <div class="topbar">
-    <div class="top-title">LM Fondo Cotizado · USD</div>
-    <div class="top-tickers">
-      <div class="tk"><label>ORO</label><span id="tk-gold">$--</span></div>
-      <div class="tk"><label>PLATA</label><span id="tk-silver">$--</span></div>
+    <div class="brandline">
+      <h1>LM Fondo Cotizado • USD</h1>
+      <div class="inline-tickers">
+        <div><span class="label">ORO</span><span id="t-gold" class="val">$-</span></div>
+        <div><span class="label">PLATA</span><span id="t-silver" class="val">$-</span></div>
+      </div>
     </div>
   </div>
 
-  <div class="wrap">
-    <!-- ===== ORO ===== -->
+  <div class="grid">
+
+    <!-- ORO -->
     <div class="card" id="gold-card">
-      <div class="card-head">
-        <div class="title-sm">ORO (XAU/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big-price" id="gold-price">$--</div>
-        <div class="tf-row" data-metal="XAU">
-          <button class="tf-btn active" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="1h">1h</button>
-          <button class="tf-btn" data-tf="4h">4h</button>
-          <button class="tf-btn" data-tf="1d">1d</button>
-        </div>
+      <div class="title">ORO (XAU/USD)</div>
+      <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
+      <div id="gold-spot" class="big">$--</div>
+
+      <div class="btns" data-sym="XAUUSD">
+        <button class="btn active" data-i="1m">1m</button>
+        <button class="btn" data-i="5m" disabled>5m</button>
+        <button class="btn" data-i="15m" disabled>15m</button>
+        <button class="btn" data-i="1h" disabled>1h</button>
+        <button class="btn" data-i="4h" disabled>4h</button>
+        <button class="btn" data-i="1d" disabled>1d</button>
       </div>
-      <div class="chart-container">
-        <div id="chart-gold" class="chart-box"></div>
-        <!-- watermark: si no encuentra el PNG se oculta (evita icono azul) -->
-        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" onerror="this.style.display='none'"/>
+
+      <div class="chart-wrap">
+        <div id="chart-gold" class="chart"></div>
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
       </div>
-      <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span class="ts" id="gold-upd">Actualizado: --/--/---- --:--</span>
+
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div class="muted">Actualizado: <span id="gold-ts">--/--/---- --:--</span></div>
       </div>
     </div>
 
-    <!-- ===== PLATA ===== -->
+    <!-- PLATA -->
     <div class="card" id="silver-card">
-      <div class="card-head">
-        <div class="title-sm">PLATA (XAG/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big-price" id="silver-price">$--</div>
-        <div class="tf-row" data-metal="XAG">
-          <button class="tf-btn active" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="1h">1h</button>
-          <button class="tf-btn" data-tf="4h">4h</button>
-          <button class="tf-btn" data-tf="1d">1d</button>
-        </div>
+      <div class="title">PLATA (XAG/USD)</div>
+      <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
+      <div id="silver-spot" class="big">$--</div>
+
+      <div class="btns" data-sym="XAGUSD">
+        <button class="btn active" data-i="1m">1m</button>
+        <button class="btn" data-i="5m" disabled>5m</button>
+        <button class="btn" data-i="15m" disabled>15m</button>
+        <button class="btn" data-i="1h" disabled>1h</button>
+        <button class="btn" data-i="4h" disabled>4h</button>
+        <button class="btn" data-i="1d" disabled>1d</button>
       </div>
-      <div class="chart-container">
-        <div id="chart-silver" class="chart-box"></div>
-        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" onerror="this.style.display='none'"/>
+
+      <div class="chart-wrap">
+        <div id="chart-silver" class="chart"></div>
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
       </div>
-      <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span class="ts" id="silver-upd">Actualizado: --/--/---- --:--</span>
+
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div class="muted">Actualizado: <span id="silver-ts">--/--/---- --:--</span></div>
       </div>
     </div>
+
   </div>
 
+  <!-- Lightweight Charts (TradingView) -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <script>
-    const API = "/api/spot";
+    const fmtMoney = (n) => {
+      return "$" + (Number(n).toFixed(2));
+    };
+    const fmtTS = (ms) => {
+      const d = new Date(ms);
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+    };
 
-    // ===== Utilidades =====
-    const pad = (n)=> String(n).padStart(2,"0");
-    function fmtDT(ts){
-      const d=new Date(ts);
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    async function fetchSpot(symbol){
+      const r = await fetch(`/api/spot?symbol=${symbol}`, { cache:"no-store" });
+      return r.json();
     }
-    const fmt = (n)=> `$${Number(n).toFixed(2)}`;
-
-    // ===== fetch spot =====
-    async function loadSpot(){
-      try{
-        const r = await fetch(API, {cache:"no-store"});
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error||"spot fail");
-        // JSON esperado: { gold:{price}, silver:{price}, ts }
-        const g = Number(j?.gold?.price);
-        const s = Number(j?.silver?.price);
-
-        if (Number.isFinite(g)){
-          document.getElementById("gold-price").textContent = fmt(g);
-          document.getElementById("tk-gold").textContent    = fmt(g);
-        }
-        if (Number.isFinite(s)){
-          document.getElementById("silver-price").textContent = fmt(s);
-          document.getElementById("tk-silver").textContent    = fmt(s);
-        }
-        const ts = j?.ts || Date.now();
-        document.getElementById("gold-upd").textContent   = "Actualizado: " + fmtDT(ts);
-        document.getElementById("silver-upd").textContent = "Actualizado: " + fmtDT(ts);
-        return { gold:g, silver:s, ts };
-      }catch(e){
-        console.log("spot error:", e.message);
-        return null;
-      }
+    async function fetchCandles(symbol, interval="1m", limit=240){
+      const r = await fetch(`/api/candles?symbol=${symbol}&interval=${interval}&limit=${limit}`, { cache:"no-store" });
+      return r.json();
     }
 
-    // ===== velas (placeholder anclado al spot) =====
-    function makeCandlesFromSpot(price, points=40, vol=0.0007, ts=Date.now()){
-      const out=[]; let last=price; const now = Math.floor(ts/1000);
-      for(let i=points;i>=0;i--){
-        const t = now - i*60;
-        const delta = (Math.random()-0.5) * (price*vol);
-        const open=last, close=last+delta;
-        const high=Math.max(open,close)+price*(vol*0.6);
-        const low =Math.min(open,close)-price*(vol*0.6);
-        out.push({ time:t, open, high, low, close });
-        last=close;
-      }
-      return out;
-    }
-
-    // ===== Charts =====
-    function createChart(el){
-      const c = LightweightCharts.createChart(el,{
-        layout:{ background:{color:"#1a1a1a"}, textColor:"#fff" },
-        grid:{ vertLines:{color:"rgba(198,166,99,.05)"}, horzLines:{color:"rgba(198,166,99,.05)"} },
-        rightPriceScale:{ borderColor:"rgba(198,166,99,.3)" },
-        timeScale:{ borderColor:"rgba(198,166,99,.3)", timeVisible:true, secondsVisible:false }
+    function buildChart(el){
+      const chart = LightweightCharts.createChart(el, {
+        layout: { background: { type: 'solid', color: '#0c0c0c' }, textColor: '#ddd' },
+        rightPriceScale: { borderColor: '#333' },
+        timeScale: { borderColor: '#333' },
+        grid: { vertLines: { color: '#262626' }, horzLines: { color: '#262626' } }
       });
-      const s = c.addCandlestickSeries({
-        upColor:"#00c853", downColor:"#d32f2f",
-        borderUpColor:"#00c853", borderDownColor:"#d32f2f",
-        wickUpColor:"#00c853", wickDownColor:"#d32f2f"
+      const series = chart.addCandlestickSeries({
+        upColor: '#00C853', downColor:'#E53935', borderVisible:false, wickUpColor:'#00C853', wickDownColor:'#E53935'
       });
-      return { c, s };
+      return { chart, series };
     }
 
-    const gold = createChart(document.getElementById("chart-gold"));
-    const silver = createChart(document.getElementById("chart-silver"));
+    const goldChart = buildChart(document.getElementById('chart-gold'));
+    const silverChart = buildChart(document.getElementById('chart-silver'));
 
-    const last = { gold: 4000, silver: 50, ts: Date.now() };
-
-    function applyTF(metal, tf){
-      let points=40, vol=0.0007;
-      switch(tf){
-        case "5m": points=60; vol=0.0005; break;
-        case "15m": points=80; vol=0.0004; break;
-        case "1h": points=96; vol=0.00035; break;
-        case "4h": points=60; vol=0.00025; break;
-        case "1d": points=30; vol=0.00018; break;
+    async function boot(symbol, ids, chartObj){
+      // Spot
+      const spot = await fetchSpot(symbol);
+      if (spot?.ok) {
+        document.getElementById(ids.spot).textContent = fmtMoney(spot.price);
+        document.getElementById(ids.ts).textContent   = fmtTS(spot.ts);
+        const tickerId = (symbol==="XAUUSD") ? "t-gold" : "t-silver";
+        document.getElementById(tickerId).textContent = fmtMoney(spot.price);
       }
-      if (metal==="XAU"){
-        gold.s.setData(makeCandlesFromSpot(last.gold, points, vol, last.ts));
-        gold.c.timeScale().fitContent();
-      }else{
-        silver.s.setData(makeCandlesFromSpot(last.silver, points, vol, last.ts));
-        silver.c.timeScale().fitContent();
+
+      // Candles
+      const c = await fetchCandles(symbol, "1m", 240);
+      if (c?.ok && Array.isArray(c.candles)) {
+        // lightweight-charts espera time en segundos (epoch)
+        chartObj.series.setData(c.candles);
       }
     }
 
-    document.querySelectorAll(".tf-row").forEach(row=>{
-      const metal=row.getAttribute("data-metal");
-      row.querySelectorAll(".tf-btn").forEach(btn=>{
-        btn.addEventListener("click", ()=>{
-          row.querySelectorAll(".tf-btn").forEach(b=>b.classList.remove("active"));
-          btn.classList.add("active");
-          applyTF(metal, btn.getAttribute("data-tf"));
-        });
+    // Primer render
+    boot("XAUUSD", {spot:"gold-spot", ts:"gold-ts"}, goldChart);
+    boot("XAGUSD", {spot:"silver-spot", ts:"silver-ts"}, silverChart);
+
+    // Actualización periódica del spot (cada 25 s)
+    setInterval(() => boot("XAUUSD", {spot:"gold-spot", ts:"gold-ts"}, goldChart), 25000);
+    setInterval(() => boot("XAGUSD", {spot:"silver-spot", ts:"silver-ts"}, silverChart), 25000);
+
+    // Botones de timeframe (por ahora 1m fijo visual + estado activo)
+    document.querySelectorAll('.btns').forEach(group=>{
+      group.addEventListener('click', (e)=>{
+        const b = e.target.closest('button');
+        if(!b) return;
+        group.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        // Si mañana habilitamos otros intervalos, acá llamamos a fetchCandles con b.dataset.i
       });
     });
-
-    // Inicialización + polling
-    (async ()=>{
-      const spot = await loadSpot();
-      if (spot){
-        if (Number.isFinite(spot.gold))   last.gold  = spot.gold;
-        if (Number.isFinite(spot.silver)) last.silver= spot.silver;
-        last.ts = spot.ts || Date.now();
-      }
-      applyTF("XAU","1m");
-      applyTF("XAG","1m");
-    })();
-
-    setInterval(async ()=>{
-      const spot = await loadSpot();
-      if (spot){
-        if (Number.isFinite(spot.gold))   last.gold  = spot.gold;
-        if (Number.isFinite(spot.silver)) last.silver= spot.silver;
-        last.ts = spot.ts || Date.now();
-        const xauTF = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute("data-tf") || "1m";
-        const xagTF = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute("data-tf") || "1m";
-        applyTF("XAU", xauTF);
-        applyTF("XAG", xagTF);
-      }
-    }, 60000);
   </script>
 </body>
 </html>
