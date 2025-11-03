@@ -6,268 +6,36 @@
   <title>LM Fondo Cotizado</title>
   <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    :root{
-      --lm-bg:#1a1a1a;
-      --lm-card:#101010;
-      --lm-gold:#c6a663;
-      --lm-green:#00c853;
-      --lm-red:#d32f2f;
+    :root {
+      --lm-bg: #1a1a1a;
+      --lm-card: #101010;
+      --lm-gold: #c6a663;
+      --lm-green: #00c853;
+      --lm-red: #d32f2f;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      background:#1a1a1a;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:#fff;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--lm-bg);
+      color: #fff;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
     }
-    .topbar{
-      background:#000;
-      border-bottom:1px solid rgba(198,166,99,.4);
-      padding:14px 16px 4px 16px;
-      display:flex;align-items:center;gap:10px
+    .topbar {
+      background: #000;
+      border-bottom: 1px solid rgba(198,166,99,.4);
+      padding: 14px 16px 8px;
+      display: flex; gap: 10px; align-items: center;
+      position: sticky; top: 0; z-index: 10;
     }
-    .top-title{font-weight:700;letter-spacing:.04em}
-    .top-tickers{margin-left:auto;display:flex;gap:20px}
-    .tk{font-size:13px}
-    .tk label{opacity:.55;margin-right:4px}
-    .tk span{color:var(--lm-green);font-weight:700}
+    .top-title { font-weight: 800; letter-spacing: .04em; }
+    .top-tickers { margin-left: auto; display: flex; gap: 18px; }
+    .tk { font-size: 13px; }
+    .tk label { opacity:.6; margin-right:4px }
+    .tk span { color: var(--lm-green); font-weight: 800; }
 
-    .wrap{padding:12px 10px 70px 10px;display:flex;flex-direction:column;gap:14px}
-    .card{
-      background:var(--lm-card);
-      border:1px solid rgba(198,166,99,.4);
-      border-radius:26px;overflow:hidden
-    }
-    .card-head{padding:16px 16px 6px 16px}
-    .title-sm{font-size:15px;font-weight:700;letter-spacing:.03em}
-    .subtitle{font-size:13px;opacity:.6}
-    .big-price{font-size:38px;font-weight:800;color:var(--lm-green);margin:6px 0 12px 0}
-    .tf-row{display:flex;gap:8px;margin-bottom:12px}
-    .tf-btn{
-      background:#000;border:1px solid transparent;color:#fff;
-      border-radius:14px;padding:6px 12px;font-size:14px
-    }
-    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
-
-    .chart-container{position:relative;height:280px;background:#1a1a1a}
-    .chart-box{position:absolute;inset:0;z-index:0}
-    .lm-watermark{
-      position:absolute;left:10px;bottom:10px;width:32px;height:32px;
-      opacity:.9;object-fit:contain;pointer-events:none;z-index:1;
-      filter:drop-shadow(0 0 2px rgba(0,0,0,.6))
-    }
-    .chart-footer{
-      background:#000;padding:10px 14px 14px 14px;
-      display:flex;align-items:center;justify-content:space-between;gap:8px
-    }
-    .chart-footer .brand{font-weight:700}
-    .chart-footer .ts{font-size:13px;opacity:.8}
-
-    @media (min-width:820px){
-      .wrap{max-width:1180px;margin:0 auto}
-    }
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <div class="top-title">LM Fondo Cotizado · USD</div>
-    <div class="top-tickers">
-      <div class="tk"><label>ORO</label><span id="tk-gold">$--</span></div>
-      <div class="tk"><label>PLATA</label><span id="tk-silver">$--</span></div>
-    </div>
-  </div>
-
-  <div class="wrap">
-    <!-- ===== ORO ===== -->
-    <div class="card" id="gold-card">
-      <div class="card-head">
-        <div class="title-sm">ORO (XAU/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big-price" id="gold-price">$--</div>
-        <div class="tf-row" data-metal="XAU">
-          <button class="tf-btn active" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="1h">1h</button>
-          <button class="tf-btn" data-tf="4h">4h</button>
-          <button class="tf-btn" data-tf="1d">1d</button>
-        </div>
-      </div>
-      <div class="chart-container">
-        <div id="chart-gold" class="chart-box"></div>
-        <!-- Marca de agua dentro del gráfico -->
-        <img id="wm-gold" class="lm-watermark" alt="LM">
-      </div>
-      <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span class="ts" id="gold-upd">Actualizado: --/--/---- --:--</span>
-      </div>
-    </div>
-
-    <!-- ===== PLATA ===== -->
-    <div class="card" id="silver-card">
-      <div class="card-head">
-        <div class="title-sm">PLATA (XAG/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big-price" id="silver-price">$--</div>
-        <div class="tf-row" data-metal="XAG">
-          <button class="tf-btn active" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="1h">1h</button>
-          <button class="tf-btn" data-tf="4h">4h</button>
-          <button class="tf-btn" data-tf="1d">1d</button>
-        </div>
-      </div>
-      <div class="chart-container">
-        <div id="chart-silver" class="chart-box"></div>
-        <!-- Marca de agua dentro del gráfico -->
-        <img id="wm-silver" class="lm-watermark" alt="LM">
-      </div>
-      <div class="chart-footer">
-        <span class="brand">LM Fondo Cotizado</span>
-        <span class="ts" id="silver-upd">Actualizado: --/--/---- --:--</span>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ========= Utilidades de fecha =========
-    function pad(n){return n<10?'0'+n:n}
-    function fmtNow(d=new Date()){
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-    }
-
-    // ========= Carga robusta del LOGO (marca de agua) =========
-    function setLMLogo(imgEl){
-      const paths = ['/IMG_2975.png', './IMG_2975.png', '/public/IMG_2975.png'];
-      let i = 0;
-      function tryNext(){
-        if(i>=paths.length) return;
-        const url = paths[i] + (i===0 ? ('?v='+Date.now()) : '');
-        imgEl.onerror = () => { i++; tryNext(); };
-        imgEl.src = url;
-      }
-      tryNext();
-    }
-    setLMLogo(document.getElementById('wm-gold'));
-    setLMLogo(document.getElementById('wm-silver'));
-
-    // ========= Precios spot desde tu backend (/api/spot) =========
-    async function loadSpot(){
-      try{
-        const r = await fetch('/api/spot');
-        const data = await r.json();
-        return data;
-      }catch(e){
-        console.log('error spot', e);
-        return null;
-      }
-    }
-
-    // ========= Generador simple de velas (simulado a partir del spot) =========
-    function makeCandlesFromSpot(price, points=40, volatility=0.0007){
-      const now = Math.floor(Date.now()/1000);
-      const out = [];
-      let last = price;
-      for(let i=points;i>=0;i--){
-        const t = now - i*60;
-        const delta = (Math.random()-0.5) * (price*volatility);
-        const open = last;
-        const close = last + delta;
-        const high = Math.max(open, close) + price*(volatility*0.6);
-        const low  = Math.min(open, close) - price*(volatility*0.6);
-        out.push({time:t, open, high, low, close});
-        last = close;
-      }
-      return out;
-    }
-
-    // ========= Charts =========
-    function makeChart(el){
-      return LightweightCharts.createChart(el,{
-        layout:{ background:{color:'#1a1a1a'}, textColor:'#fff' },
-        grid:{ vertLines:{color:'rgba(198,166,99,0.05)'}, horzLines:{color:'rgba(198,166,99,0.05)'} },
-        rightPriceScale:{ borderColor:'rgba(198,166,99,0.3)' },
-        timeScale:{
-          borderColor:'rgba(198,166,99,0.3)',
-          timeVisible:true, secondsVisible:false
-        }
-      });
-    }
-
-    const goldChart  = makeChart(document.getElementById('chart-gold'));
-    const silverChart= makeChart(document.getElementById('chart-silver'));
-
-    const goldSeries = goldChart.addCandlestickSeries({
-      upColor:'#00c853', downColor:'#d32f2f',
-      borderUpColor:'#00c853', borderDownColor:'#d32f2f',
-      wickUpColor:'#00c853', wickDownColor:'#d32f2f'
-    });
-    const silverSeries = silverChart.addCandlestickSeries({
-      upColor:'#00c853', downColor:'#d32f2f',
-      borderUpColor:'#00c853', borderDownColor:'#d32f2f',
-      wickUpColor:'#00c853', wickDownColor:'#d32f2f'
-    });
-
-    const lastPrices = { gold: 4000, silver: 50 };
-
-    function applyTimeframe(metal, tf){
-      let points=40, vol=0.0007;
-      switch(tf){
-        case '5m':  points=60; vol=0.0005; break;
-        case '15m': points=80; vol=0.0004; break;
-        case '1h':  points=96; vol=0.00035; break;
-        case '4h':  points=60; vol=0.00025; break;
-        case '1d':  points=30; vol=0.00018; break;
-      }
-      if(metal==='XAU'){
-        goldSeries.setData(makeCandlesFromSpot(lastPrices.gold, points, vol));
-      }else{
-        silverSeries.setData(makeCandlesFromSpot(lastPrices.silver, points, vol));
-      }
-    }
-
-    // Clicks de timeframe
-    document.querySelectorAll('.tf-row').forEach(row=>{
-      const metal = row.getAttribute('data-metal');
-      row.querySelectorAll('.tf-btn').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          row.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
-          btn.classList.add('active');
-          applyTimeframe(metal, btn.getAttribute('data-tf'));
-        });
-      });
-    });
-
-    // ========= Inicialización =========
-    async function refreshSpotAndUI(){
-      const spot = await loadSpot();
-      if(spot){
-        if(spot.gold?.price){
-          lastPrices.gold = spot.gold.price;
-          document.getElementById('gold-price').textContent  = '$' + spot.gold.price.toFixed(2);
-          document.getElementById('tk-gold').textContent     = '$' + spot.gold.price.toFixed(2);
-          document.getElementById('gold-upd').textContent    = 'Actualizado: ' + fmtNow(new Date(spot.now || Date.now()));
-        }
-        if(spot.silver?.price){
-          lastPrices.silver = spot.silver.price;
-          document.getElementById('silver-price').textContent= '$' + spot.silver.price.toFixed(2);
-          document.getElementById('tk-silver').textContent   = '$' + spot.silver.price.toFixed(2);
-          document.getElementById('silver-upd').textContent  = 'Actualizado: ' + fmtNow(new Date(spot.now || Date.now()));
-        }
-      }
-      // Mantener velas en el timeframe activo
-      const gtf = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
-      const stf = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
-      applyTimeframe('XAU', gtf);
-      applyTimeframe('XAG', stf);
-    }
-
-    // Primera carga
-    refreshSpotAndUI();
-    // Actualización cada 60s
-    setInterval(refreshSpotAndUI, 60000);
-  </script>
-</body>
-</html>
+    .wrap { padding: 12px 10px 60px; display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      background: var(--lm-card);
+      border: 1px solid rgba(198,166,99,.4);
+      border-radius: 26px; overflow: hidden;
+   
