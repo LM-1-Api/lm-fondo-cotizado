@@ -1,157 +1,134 @@
-// server.js
-// Puente a MetalPrice API. Node 18 (fetch disponible). CommonJS.
+// server.js  (Node.js Serverless en Vercel, CJS)
+const pairMap = { XAUUSD: "XAU/USD", XAGUSD: "XAG/USD" };
 
-const MP_BASE = "https://api.metalpriceapi.com/v1";
+// Puedes dejar tus claves acá o en variables de entorno (recomendado):
+const GOLDAPI_KEY = process.env.GOLDAPI_KEY || "goldapi-3szmoxgsmgo1ms8o-io";
+// Metalprice keys (fallback)
+const METALPRICE_KEYS = [
+  process.env.METALPRICE_KEY1,
+  process.env.METALPRICE_KEY2,
+  "a06ea2dec055d0e31754673ee846dff2",
+  "386d0a353a350f94eaf305714cde7c46"
+].filter(Boolean);
 
-function ok(res, data) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
+// (Opcional) si tenés velas intradía reales, poné una URL con {PAIR}:
+// ej: https://www.goldapi.io/api/{PAIR}/candles?interval=1m&limit=240
+const CANDLES_URL = process.env.GOLDAPI_CANDLES_URL || "";
+
+function sendJSON(res, obj) {
   res.statusCode = 200;
-  res.end(JSON.stringify(data));
-}
-function fail(res, code, message, extra = {}) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.statusCode = code;
-  res.end(JSON.stringify({ ok: false, error: message, ...extra }));
-}
-function pickKey() {
-  return process.env.MP_PRIMARY_KEY || process.env.MP_SECONDARY_KEY || "";
-}
-function ensureSymbol(raw) {
-  const s = (raw || "").toUpperCase();
-  if (s === "XAUUSD" || s === "XAGUSD") return s;
-  throw new Error("Símbolo inválido. Usa XAUUSD o XAGUSD.");
-}
-function invertUsdPerUnit(rate) {
-  // MetalPrice devuelve, por defecto, "base=USD" => rate = XAU por 1 USD
-  // USD por 1 XAU = 1 / rate
-  if (!rate || rate <= 0) return null;
-  return 1 / rate;
-}
-function nowIso(offsetMinutes = 0) {
-  return new Date(Date.now() + offsetMinutes * 60000)
-    .toISOString()
-    .slice(0, 16)
-    .replace("T", " ");
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(obj));
 }
 
-async function getLatest(symbol) {
-  const key = pickKey();
-  if (!key) throw new Error("Falta MP_PRIMARY_KEY/MP_SECONDARY_KEY");
-
-  // XAUUSD -> currency = XAU
-  const cur = symbol.startsWith("XAU") ? "XAU" : "XAG";
-  const url = `${MP_BASE}/latest?api_key=${key}&base=USD&currencies=${cur}`;
-
-  const r = await fetch(url, { cache: "no-store" });
+async function goldapiSpot(symbol) {
+  const pair = pairMap[symbol];
+  const r = await fetch(`https://www.goldapi.io/api/${pair}`, {
+    headers: { "x-access-token": GOLDAPI_KEY, "Accept": "application/json" },
+    cache: "no-store"
+  });
   const j = await r.json().catch(() => ({}));
-
-  if (!r.ok || j.success === false) {
-    throw new Error(`MetalPrice/latest error: ${j.error || r.statusText}`);
-  }
-  const rate = j.rates?.[cur];
-  const price = invertUsdPerUnit(rate);
-  if (!price) throw new Error("Respuesta sin tasa válida");
-
-  return {
-    ok: true,
-    symbol,
-    price, // USD por oz
-    ts: j.timestamp ? j.timestamp * 1000 : Date.now()
-  };
+  if (!r.ok || j.error) throw new Error(j?.message || j?.error || "GoldAPI spot error");
+  const price = Number(j.price ?? j.last ?? j.ask ?? j.bid);
+  const ts = (j.timestamp ? j.timestamp * 1000 : Date.now());
+  if (!price) throw new Error("GoldAPI sin precio");
+  return { price, ts, raw: j };
 }
 
-async function getCandles(symbol, interval = "1m", limit = 240) {
-  const key = pickKey();
-  if (!key) throw new Error("Falta MP_PRIMARY_KEY/MP_SECONDARY_KEY");
+// Metalprice: base=USD, currencies=XAU|XAG -> hay que invertír el rate para USD por onza
+async function metalpriceSpot(symbol) {
+  const cur = symbol === "XAUUSD" ? "XAU" : "XAG";
+  let lastErr;
+  for (const key of METALPRICE_KEYS) {
+    try {
+      const url = `https://api.metalpriceapi.com/v1/latest?api_key=${key}&base=USD&currencies=${cur}`;
+      const r = await fetch(url, { cache: "no-store" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) throw new Error(j?.error || "Metalprice falló");
+      const rate = Number(j?.rates?.[cur]);
+      if (!rate) throw new Error("Metalprice sin rate");
+      const price = 1 / rate; // USD por XAU/XAG
+      const ts = (j?.timestamp ? j.timestamp * 1000 : Date.now());
+      return { price, ts, raw: j };
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("Metalprice sin datos");
+}
 
-  const cur = symbol.startsWith("XAU") ? "XAU" : "XAG";
+async function getSpot(symbol) {
+  try {
+    return await goldapiSpot(symbol);
+  } catch {
+    return await metalpriceSpot(symbol);
+  }
+}
 
-  // Ventana: últimas ~4 horas para 1m (ajusta si quieres más)
-  const end = new Date();
-  const start = new Date(end.getTime() - Math.max(1, parseInt(limit, 10)) * 60 * 1000);
-
-  const startDate = start.toISOString().slice(0, 10);
-  const endDate = end.toISOString().slice(0, 10);
-
-  // Nota: en planes gratuitos, /timeframe suele ser por día/hora.
-  // Igual lo usamos; si no hay granularidad minuto, derivamos "velas" pseudo-minuto
-  // a partir de los puntos disponibles para no romper el chart.
-  const url = `${MP_BASE}/timeframe?api_key=${key}&base=USD&currencies=${cur}&start_date=${startDate}&end_date=${endDate}`;
-
-  const r = await fetch(url, { cache: "no-store" });
+async function goldapiCandlesReal(symbol, limit) {
+  if (!CANDLES_URL) return null;
+  const pair = pairMap[symbol];
+  const url = CANDLES_URL.replace("{PAIR}", pair);
+  const r = await fetch(url, { headers: { "x-access-token": GOLDAPI_KEY, "Accept": "application/json" }, cache: "no-store" });
   const j = await r.json().catch(() => ({}));
+  if (!r.ok || !Array.isArray(j)) return null;
+  const out = j.slice(-limit).map(row => ({
+    time: Math.floor((row.time || row.timestamp || row.t || Date.now()) / 1000),
+    open: Number(row.open ?? row.o ?? row.price ?? 0),
+    high: Number(row.high ?? row.h ?? row.price ?? 0),
+    low:  Number(row.low  ?? row.l ?? row.price ?? 0),
+    close:Number(row.close?? row.c ?? row.price ?? 0)
+  })).filter(c => c.time && c.close);
+  return out.length ? out : null;
+}
 
-  if (!r.ok || j.success === false) {
-    // Fallback “suave”: repetimos latest como rango plano para que no truene
-    const { price, ts } = await getLatest(symbol);
-    const candles = [];
-    let t = Math.floor((ts - limit * 60 * 1000) / 1000);
-    for (let i = 0; i < limit; i++, t += 60) {
-      candles.push({ time: t, open: price, high: price, low: price, close: price });
-    }
-    return { ok: true, symbol, interval, candles, degraded: true };
+async function candlesFallback(symbol, limit) {
+  const { price: base } = await getSpot(symbol);
+  const now = Math.floor(Date.now() / 1000);
+  const drift = base * 0.0002; // +-0.02% para no quedar plano
+  const arr = [];
+  for (let i = limit - 1; i >= 0; i--) {
+    const t = now - i * 60;
+    const delta = Math.sin(i / 5) * drift;
+    const o = base + delta * 0.3;
+    const c = base + delta * 0.6;
+    const h = Math.max(o, c) + drift * 0.4;
+    const l = Math.min(o, c) - drift * 0.4;
+    arr.push({ time: t, open: o, high: h, low: l, close: c });
   }
-
-  const rateMap = j.rates || {};
-  // rateMap: { '2025-11-02': { XAU: 0.00025 }, '2025-11-03': { XAU: ... } }
-  // Convertimos a velas uniformes 1m distribuyendo por el día actual (mejor que nada si no hay minuto).
-  const points = Object.keys(rateMap)
-    .sort()
-    .map((k) => ({ k, rate: rateMap[k]?.[cur] }))
-    .filter((p) => p.rate);
-
-  if (points.length === 0) {
-    // Fallback a latest si no hay puntos
-    const { price, ts } = await getLatest(symbol);
-    const candles = [];
-    let t = Math.floor((ts - limit * 60 * 1000) / 1000);
-    for (let i = 0; i < limit; i++, t += 60) {
-      candles.push({ time: t, open: price, high: price, low: price, close: price });
-    }
-    return { ok: true, symbol, interval, candles, degraded: true };
-  }
-
-  // Interpolamos simple para distribuir en 1m
-  const series = [];
-  const endSec = Math.floor(Date.now() / 1000);
-  const startSec = endSec - limit * 60;
-  const step = (points.length > 1) ? (invertUsdPerUnit(points[points.length - 1].rate) - invertUsdPerUnit(points[0].rate)) / (limit - 1) : 0;
-  for (let i = 0; i < limit; i++) {
-    const t = startSec + i * 60;
-    const base = invertUsdPerUnit(points[0].rate);
-    const price = base + step * i;
-    series.push({ time: t, open: price, high: price, low: price, close: price });
-  }
-
-  return { ok: true, symbol, interval, candles: series, degraded: points.length <= 2 };
+  return arr;
 }
 
 module.exports = async (req, res) => {
   try {
-    const url = new URL(req.url, "http://localhost");
-    const path = url.pathname.replace(/^\/api\/?/, "");
-
-    if (path === "spot") {
-      const symbol = ensureSymbol(url.searchParams.get("symbol") || "XAUUSD");
-      const out = await getLatest(symbol);
-      return ok(res, out);
+    const u = new URL(req.url, "http://localhost");
+    const path = u.pathname || "/";
+    if (path.startsWith("/api/spot")) {
+      const symbol = (u.searchParams.get("symbol") || "XAUUSD").toUpperCase();
+      if (!pairMap[symbol]) return sendJSON(res, { ok:false, error:"Símbolo inválido" });
+      try {
+        const { price, ts } = await getSpot(symbol);
+        return sendJSON(res, { ok:true, symbol, price, ts });
+      } catch (e) {
+        return sendJSON(res, { ok:false, error: e?.message || "spot error" });
+      }
     }
-    if (path === "candles") {
-      const symbol = ensureSymbol(url.searchParams.get("symbol") || "XAUUSD");
-      const interval = url.searchParams.get("interval") || "1m";
-      const limit = parseInt(url.searchParams.get("limit") || "240", 10);
-      const out = await getCandles(symbol, interval, limit);
-      return ok(res, out);
+    if (path.startsWith("/api/candles")) {
+      const symbol = (u.searchParams.get("symbol") || "XAUUSD").toUpperCase();
+      const limit = Math.min(Math.max(parseInt(u.searchParams.get("limit") || "240", 10), 60), 720);
+      if (!pairMap[symbol]) return sendJSON(res, { ok:false, error:"Símbolo inválido" });
+      try {
+        const real = await goldapiCandlesReal(symbol, limit);
+        const candles = real ?? await candlesFallback(symbol, limit);
+        return sendJSON(res, { ok:true, symbol, interval:"1m", candles, degraded: !real });
+      } catch (e) {
+        return sendJSON(res, { ok:false, error: e?.message || "candles error" });
+      }
     }
-
-    return fail(res, 404, "Ruta no encontrada");
+    // Cualquier otra ruta no-API -> deja que Vercel sirva estáticos (index.html)
+    res.statusCode = 404;
+    res.end("Not Found");
   } catch (e) {
-    return fail(res, 500, "Server error", {
-      message: e?.message || String(e),
-      hint: "Revisa las ENV MP_PRIMARY_KEY/MP_SECONDARY_KEY en Vercel."
-    });
+    // nunca 500: devolvemos JSON controlado
+    return sendJSON(res, { ok:false, error: e?.message || "handler error" });
   }
 };
