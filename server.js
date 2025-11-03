@@ -1,67 +1,50 @@
-// server.js
-// endpoint: /api/spot
-// usa tu key de GoldAPI
+// server.js  (runtime Node 18 en Vercel)
+// Express SOLO para la API; los archivos estáticos se sirven directo.
+const express = require('express');
+const app = express();
 
-const GOLDAPI_KEY = "goldapi-3szmoxgsmgo1ms8o-io"; // tu key
+const BASE = 'https://www.goldapi.io/api';
+const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
 
-async function getMetal(symbol) {
-  const url = `https://www.goldapi.io/api/${symbol}/USD`;
-  const res = await fetch(url, {
-    headers: {
-      "x-access-token": GOLDAPI_KEY,
-      "Content-Type": "application/json"
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error(`GoldAPI ${symbol} error: ${res.status}`);
-  }
-
-  const data = await res.json();
-  // GoldAPI suele devolver price, prev_close_price, etc.
-  // nos quedamos con price
-  return {
-    price: Number(data.price),
-    raw: data
-  };
-}
-
-module.exports = async (req, res) => {
-  // solo queremos /api/spot
-  if (req.url !== "/api/spot") {
-    res.statusCode = 404;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: "not found" }));
-    return;
-  }
-
+// API: /api/spot  ->  { gold:{price,updatedAt}, silver:{price,updatedAt} }
+app.get('/api/spot', async (req, res) => {
   try {
-    const [gold, silver] = await Promise.all([
-      getMetal("XAU"),
-      getMetal("XAG")
+    const headers = { 'x-access-token': KEY, 'Accept': 'application/json' };
+
+    const [gr, sr] = await Promise.all([
+      fetch(`${BASE}/XAU/USD`, { headers }),
+      fetch(`${BASE}/XAG/USD`, { headers }),
     ]);
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify({
-        gold,
-        silver,
-        source: "goldapi.io",
-        updatedAt: new Date().toISOString()
-      })
-    );
-  } catch (err) {
-    console.error(err);
-    res.statusCode = 200; // 200 para que el front no se rompa
-    res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify({
-        gold: { price: null },
-        silver: { price: null },
-        error: err.message,
-        updatedAt: new Date().toISOString()
-      })
-    );
+    if (!gr.ok || !sr.ok) {
+      return res.status(502).json({
+        error: `GoldAPI status XAU:${gr.status} XAG:${sr.status}`,
+      });
+    }
+    const g = await gr.json();
+    const s = await sr.json();
+
+    const toNum = (v) => (v == null ? null : Number(v));
+    const OZ = 31.1035;
+
+    const goldPrice =
+      toNum(g.price) ?? (g.price_gram_24k ? Number(g.price_gram_24k) * OZ : null);
+
+    const silverPrice =
+      toNum(s.price) ?? (s.price_gram_999 ? Number(s.price_gram_999) * OZ : null);
+
+    if (!goldPrice || !silverPrice) {
+      return res.status(500).json({ error: 'GoldAPI: precio no disponible' });
+    }
+
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+    res.json({
+      gold: { price: goldPrice, updatedAt: g.timestamp || Date.now() },
+      silver: { price: silverPrice, updatedAt: s.timestamp || Date.now() },
+    });
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
   }
-};
+});
+
+module.exports = app;
