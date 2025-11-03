@@ -7,73 +7,65 @@
   <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     :root{
-      --lm-bg:#1a1a1a;          /* Fondo global pedido */
-      --lm-surface:#101010;
+      --lm-bg:#1a1a1a;
+      --lm-card:#101010;
       --lm-gold:#c6a663;
       --lm-green:#00c853;
       --lm-red:#d32f2f;
-      --lm-grid:rgba(198,166,99,.06);
-      --lm-border:rgba(198,166,99,.35);
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      background:var(--lm-bg);
+      background:#1a1a1a;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       color:#fff;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
     }
-
-    /* Header/top */
     .topbar{
-      background:var(--lm-bg);
-      border-bottom:1px solid var(--lm-border);
-      padding:14px 16px 10px;
-      display:flex; align-items:center; gap:16px;
+      background:#000;
+      border-bottom:1px solid rgba(198,166,99,.4);
+      padding:14px 16px 4px 16px;
+      display:flex;align-items:center;gap:10px
     }
-    .top-title{font-weight:800;letter-spacing:.02em}
-    .top-tickers{margin-left:auto;display:flex;gap:22px}
+    .top-title{font-weight:700;letter-spacing:.04em}
+    .top-tickers{margin-left:auto;display:flex;gap:20px}
     .tk{font-size:13px}
-    .tk label{opacity:.6;margin-right:6px}
-    .tk span{color:var(--lm-green);font-weight:800}
+    .tk label{opacity:.55;margin-right:4px}
+    .tk span{color:var(--lm-green);font-weight:700}
 
-    /* Layout */
-    .wrap{padding:14px 10px 80px;display:flex;flex-direction:column;gap:16px}
-    .card{background:var(--lm-surface);border:1px solid var(--lm-border);border-radius:26px;overflow:hidden}
-    .card-head{padding:16px 16px 8px}
-    .title-sm{font-size:16px;font-weight:800;letter-spacing:.02em}
-    .subtitle{font-size:13px;opacity:.7}
-    .big-price{font-size:40px;font-weight:900;color:var(--lm-green);margin:6px 0 12px}
-
-    /* Timeframes */
-    .tf-row{display:flex;gap:10px;margin-bottom:12px}
+    .wrap{padding:12px 10px 70px 10px;display:flex;flex-direction:column;gap:14px}
+    .card{
+      background:var(--lm-card);
+      border:1px solid rgba(198,166,99,.4);
+      border-radius:26px;overflow:hidden
+    }
+    .card-head{padding:16px 16px 6px 16px}
+    .title-sm{font-size:15px;font-weight:700;letter-spacing:.03em}
+    .subtitle{font-size:13px;opacity:.6}
+    .big-price{font-size:38px;font-weight:800;color:var(--lm-green);margin:6px 0 12px 0}
+    .tf-row{display:flex;gap:8px;margin-bottom:12px}
     .tf-btn{
-      background:#222;          /* combina con #1a1a1a */
-      border:1px solid transparent;
-      color:#fff;border-radius:14px;
-      padding:7px 14px;font-size:14px
+      background:#000;border:1px solid transparent;color:#fff;
+      border-radius:14px;padding:6px 12px;font-size:14px
     }
-    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.14)}
+    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
 
-    /* Charts */
-    .chart-container{position:relative;height:300px;background:#1a1a1a}
-    .chart-box{position:absolute;inset:0}
+    .chart-container{position:relative;height:280px;background:#1a1a1a}
+    .chart-box{position:absolute;inset:0;z-index:0}
     .lm-watermark{
-      position:absolute; left:10px; bottom:10px;
-      width:30px; height:30px; opacity:.9;
-      object-fit:contain; pointer-events:none; border-radius:6px; z-index:5;
-      filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
+      position:absolute;left:10px;bottom:10px;width:32px;height:32px;
+      opacity:.9;object-fit:contain;pointer-events:none;z-index:1;
+      filter:drop-shadow(0 0 2px rgba(0,0,0,.6))
     }
-
-    /* Footer de cada card */
     .chart-footer{
-      background:var(--lm-bg);                 /* también 1a1a1a */
-      border-top:1px solid var(--lm-border);
-      display:flex;justify-content:space-between;align-items:center;
-      padding:10px 14px 14px;font-size:13px;opacity:.9
+      background:#000;padding:10px 14px 14px 14px;
+      display:flex;align-items:center;justify-content:space-between;gap:8px
     }
     .chart-footer .brand{font-weight:700}
+    .chart-footer .ts{font-size:13px;opacity:.8}
 
-    @media(min-width:820px){.wrap{max-width:1180px;margin:0 auto}}
+    @media (min-width:820px){
+      .wrap{max-width:1180px;margin:0 auto}
+    }
   </style>
 </head>
 <body>
@@ -86,7 +78,7 @@
   </div>
 
   <div class="wrap">
-    <!-- ORO -->
+    <!-- ===== ORO ===== -->
     <div class="card" id="gold-card">
       <div class="card-head">
         <div class="title-sm">ORO (XAU/USD)</div>
@@ -101,11 +93,10 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
-
       <div class="chart-container">
         <div id="chart-gold" class="chart-box"></div>
-        <!-- Marca de agua adentro del gráfico -->
-        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+        <!-- Marca de agua dentro del gráfico -->
+        <img id="wm-gold" class="lm-watermark" alt="LM">
       </div>
       <div class="chart-footer">
         <span class="brand">LM Fondo Cotizado</span>
@@ -113,7 +104,7 @@
       </div>
     </div>
 
-    <!-- PLATA -->
+    <!-- ===== PLATA ===== -->
     <div class="card" id="silver-card">
       <div class="card-head">
         <div class="title-sm">PLATA (XAG/USD)</div>
@@ -128,11 +119,10 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
-
       <div class="chart-container">
         <div id="chart-silver" class="chart-box"></div>
-        <!-- Marca de agua adentro del gráfico -->
-        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+        <!-- Marca de agua dentro del gráfico -->
+        <img id="wm-silver" class="lm-watermark" alt="LM">
       </div>
       <div class="chart-footer">
         <span class="brand">LM Fondo Cotizado</span>
@@ -142,123 +132,142 @@
   </div>
 
   <script>
-    /* ===== Utilidades de fecha ===== */
-    function fmtTS(ts){
-      // Acepta epoch (seg/milis) o ISO
-      const d = typeof ts === 'number'
-        ? new Date((ts < 1e12 ? ts*1000 : ts))
-        : new Date(ts || Date.now());
-      const pad = n => String(n).padStart(2,'0');
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    // ========= Utilidades de fecha =========
+    function pad(n){return n<10?'0'+n:n}
+    function fmtNow(d=new Date()){
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
     }
 
-    /* ===== API: spot ===== */
+    // ========= Carga robusta del LOGO (marca de agua) =========
+    function setLMLogo(imgEl){
+      const paths = ['/IMG_2975.png', './IMG_2975.png', '/public/IMG_2975.png'];
+      let i = 0;
+      function tryNext(){
+        if(i>=paths.length) return;
+        const url = paths[i] + (i===0 ? ('?v='+Date.now()) : '');
+        imgEl.onerror = () => { i++; tryNext(); };
+        imgEl.src = url;
+      }
+      tryNext();
+    }
+    setLMLogo(document.getElementById('wm-gold'));
+    setLMLogo(document.getElementById('wm-silver'));
+
+    // ========= Precios spot desde tu backend (/api/spot) =========
     async function loadSpot(){
       try{
-        const r = await fetch('/api/spot', { cache:'no-store' });
+        const r = await fetch('/api/spot');
         const data = await r.json();
-
-        if (data?.gold?.price != null){
-          const p = Number(data.gold.price);
-          document.getElementById('gold-price').textContent = '$' + p.toFixed(2);
-          document.getElementById('tk-gold').textContent    = '$' + p.toFixed(2);
-          lastPrices.gold = p;
-        }
-        if (data?.silver?.price != null){
-          const p = Number(data.silver.price);
-          document.getElementById('silver-price').textContent = '$' + p.toFixed(2);
-          document.getElementById('tk-silver').textContent    = '$' + p.toFixed(2);
-          lastPrices.silver = p;
-        }
-
-        const when = data?.updatedAt || Date.now();
-        document.getElementById('gold-upd').textContent   = 'Actualizado: ' + fmtTS(when);
-        document.getElementById('silver-upd').textContent = 'Actualizado: ' + fmtTS(when);
-
         return data;
       }catch(e){
-        console.log('spot error', e);
+        console.log('error spot', e);
         return null;
       }
     }
 
-    /* ===== Charts (Lightweight Charts) ===== */
-    function buildChart(elId){
-      const chart = LightweightCharts.createChart(document.getElementById(elId), {
-        layout:{ background:{ color:'#1a1a1a' }, textColor:'#fff' },
-        grid:{ vertLines:{ color: 'var(--lm-grid)' }, horzLines:{ color:'var(--lm-grid)' } },
-        rightPriceScale:{ borderColor:'var(--lm-border)' },
-        timeScale:{ borderColor:'var(--lm-border)', timeVisible:true, secondsVisible:false }
-      });
-      const series = chart.addCandlestickSeries({
-        upColor:'#00c853', downColor:'#d32f2f',
-        borderUpColor:'#00c853', borderDownColor:'#d32f2f',
-        wickUpColor:'#00c853', wickDownColor:'#d32f2f'
-      });
-      return { chart, series };
-    }
-
-    const { series: goldSeries }   = buildChart('chart-gold');
-    const { series: silverSeries } = buildChart('chart-silver');
-
-    // Últimos precios conocidos (para simular velas si no hay OHLC)
-    const lastPrices = { gold: 4000, silver: 50 };
-
-    function makeCandlesFromSpot(price, points=40, vol=0.0007, stepSec=60){
+    // ========= Generador simple de velas (simulado a partir del spot) =========
+    function makeCandlesFromSpot(price, points=40, volatility=0.0007){
       const now = Math.floor(Date.now()/1000);
-      const out = []; let last = price || 100;
-      for(let i=points; i>=0; i--){
-        const time = now - i*stepSec;
-        const delta = (Math.random()-0.5) * price * vol;
-        const open  = last;
+      const out = [];
+      let last = price;
+      for(let i=points;i>=0;i--){
+        const t = now - i*60;
+        const delta = (Math.random()-0.5) * (price*volatility);
+        const open = last;
         const close = last + delta;
-        const high  = Math.max(open, close) + price*(vol*0.6);
-        const low   = Math.min(open, close) - price*(vol*0.6);
-        out.push({ time, open, high, low, close });
+        const high = Math.max(open, close) + price*(volatility*0.6);
+        const low  = Math.min(open, close) - price*(volatility*0.6);
+        out.push({time:t, open, high, low, close});
         last = close;
       }
       return out;
     }
 
-    function applyTF(metal, tf){
-      let points=40, vol=0.0007, step=60;
-      if (tf==='5m'){ points=60; vol=0.0005; step=300; }
-      else if (tf==='15m'){ points=80; vol=0.0004; step=900; }
-      else if (tf==='1h'){ points=96; vol=0.00035; step=3600; }
-      else if (tf==='4h'){ points=60; vol=0.00025; step=14400; }
-      else if (tf==='1d'){ points=30; vol=0.00018; step=86400; }
-
-      const spot = (metal==='XAU') ? lastPrices.gold : lastPrices.silver;
-      const data = makeCandlesFromSpot(spot, points, vol, step);
-      (metal==='XAU' ? goldSeries : silverSeries).setData(data);
+    // ========= Charts =========
+    function makeChart(el){
+      return LightweightCharts.createChart(el,{
+        layout:{ background:{color:'#1a1a1a'}, textColor:'#fff' },
+        grid:{ vertLines:{color:'rgba(198,166,99,0.05)'}, horzLines:{color:'rgba(198,166,99,0.05)'} },
+        rightPriceScale:{ borderColor:'rgba(198,166,99,0.3)' },
+        timeScale:{
+          borderColor:'rgba(198,166,99,0.3)',
+          timeVisible:true, secondsVisible:false
+        }
+      });
     }
 
-    // Listeners timeframes
+    const goldChart  = makeChart(document.getElementById('chart-gold'));
+    const silverChart= makeChart(document.getElementById('chart-silver'));
+
+    const goldSeries = goldChart.addCandlestickSeries({
+      upColor:'#00c853', downColor:'#d32f2f',
+      borderUpColor:'#00c853', borderDownColor:'#d32f2f',
+      wickUpColor:'#00c853', wickDownColor:'#d32f2f'
+    });
+    const silverSeries = silverChart.addCandlestickSeries({
+      upColor:'#00c853', downColor:'#d32f2f',
+      borderUpColor:'#00c853', borderDownColor:'#d32f2f',
+      wickUpColor:'#00c853', wickDownColor:'#d32f2f'
+    });
+
+    const lastPrices = { gold: 4000, silver: 50 };
+
+    function applyTimeframe(metal, tf){
+      let points=40, vol=0.0007;
+      switch(tf){
+        case '5m':  points=60; vol=0.0005; break;
+        case '15m': points=80; vol=0.0004; break;
+        case '1h':  points=96; vol=0.00035; break;
+        case '4h':  points=60; vol=0.00025; break;
+        case '1d':  points=30; vol=0.00018; break;
+      }
+      if(metal==='XAU'){
+        goldSeries.setData(makeCandlesFromSpot(lastPrices.gold, points, vol));
+      }else{
+        silverSeries.setData(makeCandlesFromSpot(lastPrices.silver, points, vol));
+      }
+    }
+
+    // Clicks de timeframe
     document.querySelectorAll('.tf-row').forEach(row=>{
       const metal = row.getAttribute('data-metal');
       row.querySelectorAll('.tf-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           row.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
-          applyTF(metal, btn.getAttribute('data-tf'));
+          applyTimeframe(metal, btn.getAttribute('data-tf'));
         });
       });
     });
 
-    // Init + refrescos
-    (async ()=>{
-      await loadSpot();
-      applyTF('XAU','1m');
-      applyTF('XAG','1m');
-    })();
-
-    setInterval(async ()=>{
-      await loadSpot();
+    // ========= Inicialización =========
+    async function refreshSpotAndUI(){
+      const spot = await loadSpot();
+      if(spot){
+        if(spot.gold?.price){
+          lastPrices.gold = spot.gold.price;
+          document.getElementById('gold-price').textContent  = '$' + spot.gold.price.toFixed(2);
+          document.getElementById('tk-gold').textContent     = '$' + spot.gold.price.toFixed(2);
+          document.getElementById('gold-upd').textContent    = 'Actualizado: ' + fmtNow(new Date(spot.now || Date.now()));
+        }
+        if(spot.silver?.price){
+          lastPrices.silver = spot.silver.price;
+          document.getElementById('silver-price').textContent= '$' + spot.silver.price.toFixed(2);
+          document.getElementById('tk-silver').textContent   = '$' + spot.silver.price.toFixed(2);
+          document.getElementById('silver-upd').textContent  = 'Actualizado: ' + fmtNow(new Date(spot.now || Date.now()));
+        }
+      }
+      // Mantener velas en el timeframe activo
       const gtf = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
       const stf = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
-      applyTF('XAU', gtf);
-      applyTF('XAG', stf);
-    }, 60000);
+      applyTimeframe('XAU', gtf);
+      applyTimeframe('XAG', stf);
+    }
+
+    // Primera carga
+    refreshSpotAndUI();
+    // Actualización cada 60s
+    setInterval(refreshSpotAndUI, 60000);
   </script>
 </body>
 </html>
