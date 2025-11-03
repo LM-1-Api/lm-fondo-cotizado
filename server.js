@@ -1,39 +1,55 @@
-// api/spot.js
-export default async function handler(req, res) {
-  try {
-    const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
-    const headers = {
-      'x-access-token': KEY,
-      'Content-Type': 'application/json'
-    };
+// server.js
+const express = require("express");
+const fetch = require("node-fetch");
+const app = express();
 
-    const [xauRes, xagRes] = await Promise.all([
-      fetch('https://www.goldapi.io/api/XAU/USD', { headers, cache: 'no-store' }),
-      fetch('https://www.goldapi.io/api/XAG/USD', { headers, cache: 'no-store' })
+// --- CONFIG ---
+const GOLDAPI_KEY = process.env.GOLDAPI_KEY || "goldapi-3szmoxgsmgo1ms8o-io";
+const GOLDAPI_BASE = "https://www.goldapi.io/api";
+
+// Pequeño helper
+async function goldapiPair(pair) {
+  const url = `${GOLDAPI_BASE}/${pair}`;
+  const r = await fetch(url, {
+    headers: {
+      "x-access-token": GOLDAPI_KEY,
+      "Content-Type": "application/json",
+      "User-Agent": "LM-Fondo-Cotizado/1.0 (+vercel)"
+    },
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(() => "");
+    throw new Error(`GoldAPI ${pair}: ${r.status} ${txt}`);
+  }
+  const j = await r.json();
+  // GoldAPI típica: { price, open_price, high_price, low_price, timestamp, ... }
+  return {
+    price: Number(j.price),
+    open: Number(j.open_price ?? j.open),
+    high: Number(j.high_price ?? j.high),
+    low: Number(j.low_price ?? j.low),
+    ts: Number(j.timestamp ?? Math.floor(Date.now() / 1000)),
+    raw: j,
+  };
+}
+
+// Endpoint único para frontend
+app.get("/api/spot", async (_req, res) => {
+  try {
+    // Cachea 20s en edge para no quemar el plan
+    res.set("Cache-Control", "s-maxage=20, stale-while-revalidate=40");
+
+    const [gold, silver] = await Promise.all([
+      goldapiPair("XAU/USD"),
+      goldapiPair("XAG/USD"),
     ]);
 
-    const xau = await xauRes.json();
-    const xag = await xagRes.json();
-
-    // Si GoldAPI devuelve error, lo propagamos para ver qué pasa
-    if (xau?.error || xag?.error) {
-      return res.status(200).json({
-        error: xau?.error || xag?.error || 'GOLDAPI_ERROR',
-        raw: { xau, xag }
-      });
-    }
-
-    // Tomamos "price" (fallback por si viene otro campo)
-    const goldPrice   = Number(xau?.price   ?? xau?.price_gram_24k  * 31.1035 ?? null);
-    const silverPrice = Number(xag?.price   ?? xag?.price_gram_999  * 31.1035 ?? null);
-
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({
-      updatedAt: Date.now(),
-      gold:   { price: goldPrice },
-      silver: { price: silverPrice }
-    });
+    res.json({ ok: true, gold, silver, serverTime: Math.floor(Date.now() / 1000) });
   } catch (err) {
-    return res.status(200).json({ error: 'SERVER_ERROR', message: String(err) });
+    console.error(err);
+    res.status(200).json({ ok: false, error: String(err) });
   }
-}
+});
+
+// Vercel: exporta como handler
+module.exports = app;
