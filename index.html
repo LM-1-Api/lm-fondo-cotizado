@@ -20,7 +20,7 @@
     .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
     .chart-container{position:relative;height:280px;background:#1a1a1a}
     .chart-box{position:absolute;inset:0}
-    .lm-watermark{position:absolute;left:8px;bottom:8px;width:30px;height:30px;opacity:.9;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 2px #000)}
+    .lm-watermark{position:absolute;left:8px;bottom:8px;width:30px;height:30px;opacity:.95;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 2px #000)}
     .chart-footer{display:flex;justify-content:space-between;align-items:center;background:#000;padding:10px 14px 14px;font-size:13px;opacity:.9}
     @media(min-width:820px){.wrap{max-width:1180px;margin:0 auto}}
   </style>
@@ -52,7 +52,8 @@
       </div>
       <div class="chart-container">
         <div id="chart-gold" class="chart-box"></div>
-        <img class="lm-watermark" src="./IMG_2975.png?v=2" alt="LM" />
+        <!-- Logo dentro del gráfico -->
+        <img class="lm-watermark" src="./IMG_2975.png?v=3" alt="LM" onerror="this.style.display='none'">
       </div>
       <div class="chart-footer">
         <span>LM Fondo Cotizado</span>
@@ -77,7 +78,7 @@
       </div>
       <div class="chart-container">
         <div id="chart-silver" class="chart-box"></div>
-        <img class="lm-watermark" src="./IMG_2975.png?v=2" alt="LM" />
+        <img class="lm-watermark" src="./IMG_2975.png?v=3" alt="LM" onerror="this.style.display='none'">
       </div>
       <div class="chart-footer">
         <span>LM Fondo Cotizado</span>
@@ -87,32 +88,32 @@
   </div>
 
   <script>
-    // --- util ---
+    // -------- util --------
     const fmtTS = (ts) => {
       const d = new Date(typeof ts === 'number' ? ts*1000 : ts);
       const pad = (n) => (n<10 ? '0'+n : n);
       return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
-    // --- API spot ---
+    // -------- API spot --------
     async function loadSpot() {
       try {
-        const r = await fetch('/api/spot');
+        const r = await fetch('/api/spot', { cache: 'no-store' });
         if (!r.ok) throw new Error('API ' + r.status);
         const data = await r.json();
-        // Topbar + big price
+
         if (data.gold?.price) {
           const p = Number(data.gold.price);
-          document.getElementById('tk-gold').textContent   = '$' + p.toFixed(2);
-          document.getElementById('gold-price').textContent= '$' + p.toFixed(2);
-          if (data.gold.updatedAt) document.getElementById('gold-upd').textContent = 'Actualizado: ' + fmtTS(data.gold.updatedAt);
+          document.getElementById('tk-gold').textContent    = '$' + p.toFixed(2);
+          document.getElementById('gold-price').textContent = '$' + p.toFixed(2);
+          document.getElementById('gold-upd').textContent   = 'Actualizado: ' + fmtTS(data.gold.updatedAt);
           lastPrices.gold = p;
         }
         if (data.silver?.price) {
           const p = Number(data.silver.price);
           document.getElementById('tk-silver').textContent    = '$' + p.toFixed(2);
           document.getElementById('silver-price').textContent = '$' + p.toFixed(2);
-          if (data.silver.updatedAt) document.getElementById('silver-upd').textContent = 'Actualizado: ' + fmtTS(data.silver.updatedAt);
+          document.getElementById('silver-upd').textContent   = 'Actualizado: ' + fmtTS(data.silver.updatedAt);
           lastPrices.silver = p;
         }
         return data;
@@ -122,7 +123,7 @@
       }
     }
 
-    // --- candles (simulados a partir del spot) ---
+    // -------- generación de velas a partir del spot --------
     function makeCandlesFromSpot(price, points=40, vol=0.0007, stepSec=60) {
       const now = Math.floor(Date.now()/1000);
       const out = [];
@@ -140,7 +141,7 @@
       return out;
     }
 
-    // --- charts ---
+    // -------- charts --------
     function buildChart(elId) {
       const chart = LightweightCharts.createChart(document.getElementById(elId), {
         layout: { background: { color: '#1a1a1a' }, textColor: '#fff' },
@@ -157,7 +158,6 @@
 
     const gold = buildChart('chart-gold');
     const silver = buildChart('chart-silver');
-
     const lastPrices = { gold: 4000, silver: 50 };
 
     function applyTF(metal, tf) {
@@ -172,7 +172,6 @@
         metal==='XAU' ? lastPrices.gold : lastPrices.silver,
         points, vol, step
       );
-
       (metal==='XAU' ? gold.series : silver.series).setData(data);
     }
 
@@ -187,19 +186,18 @@
       });
     });
 
-    // init
     (async () => {
-      await loadSpot();
-      applyTF('XAU','1m');
+      await loadSpot();                 // llena precios
+      applyTF('XAU','1m');              // pinta velas
       applyTF('XAG','1m');
     })();
 
-    // refresco cada 60s
     setInterval(async ()=>{
       await loadSpot();
       const gtf = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
       const stf = document.querySelector('.tf-row[data-metal="XAG"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
-      applyTF('XAU', gtf); applyTF('XAG', stf);
+      applyTF('XAU', gtf);
+      applyTF('XAG', stf);
     }, 60000);
   </script>
 </body>
