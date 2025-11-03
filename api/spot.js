@@ -1,4 +1,6 @@
-// /api/spot.js  — Vercel Serverless Function
+// /api/spot.js — Vercel Serverless Function
+// Variante A: usa variable de entorno si existe (recomendado),
+// o tu key por defecto si no está configurada.
 const KEY  = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
 const BASE = 'https://www.goldapi.io/api';
 
@@ -7,9 +9,9 @@ async function getPair(pair) {
     headers: {
       'x-access-token': KEY,
       'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    cache: 'no-store'
+    cache: 'no-store',
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -19,12 +21,12 @@ async function getPair(pair) {
 }
 
 function pickPrice(obj) {
-  // GoldAPI a veces trae el valor en otros campos
   if (!obj || typeof obj !== 'object') return null;
+  // GoldAPI puede devolver en distintos campos
   if (obj.price != null) return Number(obj.price);
   if (obj.close_price != null) return Number(obj.close_price);
   if (obj.open_price  != null) return Number(obj.open_price);
-  // por si sólo viene “por gramo” (convertimos a onza troy)
+  // fallback por gramo → onza troy
   const OZ = 31.1034768;
   if (obj.price_gram_24k != null) return Number(obj.price_gram_24k) * OZ;
   if (obj.price_gram_22k != null) return Number(obj.price_gram_22k) * OZ;
@@ -33,10 +35,7 @@ function pickPrice(obj) {
 
 async function handler(req, res) {
   try {
-    const [g, s] = await Promise.all([
-      getPair('XAU/USD'),
-      getPair('XAG/USD'),
-    ]);
+    const [g, s] = await Promise.all([ getPair('XAU/USD'), getPair('XAG/USD') ]);
 
     const gPrice = pickPrice(g);
     const sPrice = pickPrice(s);
@@ -59,6 +58,6 @@ async function handler(req, res) {
   }
 }
 
-// Compatibilidad CommonJS y ESM en Vercel
+// Compatibilidad CommonJS + ESM (Vercel)
 module.exports = handler;
 export default handler;
