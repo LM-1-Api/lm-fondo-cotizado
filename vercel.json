@@ -1,23 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
-  ],
   "routes": [
-    {
-      "src": "/api/spot",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/api/spot", "dest": "/api/spot.js" },
+
+    { "src": "/(.*)\\.(css|js|png|jpg|jpeg|gif|svg|webp|ico)", "dest": "/$1.$2" },
+
+    { "src": "/", "dest": "/index.html" }
   ]
 }
