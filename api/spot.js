@@ -1,47 +1,35 @@
-// api/spot.js
+// /api/spot.js  (Vercel Serverless Function)
+const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
+const BASE = 'https://www.goldapi.io/api';
 
-export default async function handler(req, res) {
-  const apiKey = process.env.GOLDAPI_KEY; // ponés la key en Vercel
-
-  // si no hay key, devolvemos algo para que el front no muera
-  if (!apiKey) {
-    return res.status(200).json({
-      gold: { price: 4002.4 },
-      silver: { price: 48.67 },
-      source: "fallback-no-key"
-    });
+async function getPair(pair) {
+  const res = await fetch(`${BASE}/${pair}`, {
+    headers: {
+      'x-access-token': KEY,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    cache: 'no-store'
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`GoldAPI ${pair} ${res.status}: ${txt}`);
   }
-
-  try {
-    // ORO
-    const goldRes = await fetch("https://www.goldapi.io/api/XAU/USD", {
-      headers: {
-        "x-access-token": apiKey,
-        "Content-Type": "application/json"
-      }
-    });
-    const goldJson = await goldRes.json();
-
-    // PLATA
-    const silverRes = await fetch("https://www.goldapi.io/api/XAG/USD", {
-      headers: {
-        "x-access-token": apiKey,
-        "Content-Type": "application/json"
-      }
-    });
-    const silverJson = await silverRes.json();
-
-    return res.status(200).json({
-      gold: { price: Number(goldJson.price) },
-      silver: { price: Number(silverJson.price) },
-      source: "goldapi"
-    });
-  } catch (err) {
-    console.error("GoldAPI error:", err);
-    return res.status(200).json({
-      gold: { price: 4002.4 },
-      silver: { price: 48.67 },
-      source: "fallback-error"
-    });
-  }
+  return res.json();
 }
+
+module.exports = async (req, res) => {
+  try {
+    const [g, s] = await Promise.all([getPair('XAU/USD'), getPair('XAG/USD')]);
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'no-store');
+
+    res.status(200).json({
+      gold:  { price: Number(g.price),  ts: g.timestamp },
+      silver:{ price: Number(s.price),  ts: s.timestamp }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
