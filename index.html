@@ -6,32 +6,73 @@
   <title>LM Fondo Cotizado</title>
   <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    :root{--lm-bg:#000;--lm-card:#101010;--lm-gold:#c6a663;--lm-green:#00c853;--lm-red:#d32f2f}
+    :root{
+      --lm-bg:#1a1a1a;          /* Fondo global pedido */
+      --lm-surface:#101010;
+      --lm-gold:#c6a663;
+      --lm-green:#00c853;
+      --lm-red:#d32f2f;
+      --lm-grid:rgba(198,166,99,.06);
+      --lm-border:rgba(198,166,99,.35);
+    }
     *{box-sizing:border-box}
-    body{margin:0;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    .topbar{display:flex;gap:10px;align-items:center;padding:14px 16px 6px;border-bottom:1px solid rgba(198,166,99,.35)}
-    .top-title{font-weight:800;letter-spacing:.03em}
-    .top-tickers{margin-left:auto;display:flex;gap:18px}
+    body{
+      margin:0;
+      background:var(--lm-bg);
+      color:#fff;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+    }
+
+    /* Header/top */
+    .topbar{
+      background:var(--lm-bg);
+      border-bottom:1px solid var(--lm-border);
+      padding:14px 16px 10px;
+      display:flex; align-items:center; gap:16px;
+    }
+    .top-title{font-weight:800;letter-spacing:.02em}
+    .top-tickers{margin-left:auto;display:flex;gap:22px}
     .tk{font-size:13px}
-    .tk label{opacity:.6;margin-right:4px}
+    .tk label{opacity:.6;margin-right:6px}
     .tk span{color:var(--lm-green);font-weight:800}
-    .wrap{padding:12px 10px 70px;display:flex;flex-direction:column;gap:14px}
-    .card{background:var(--lm-card);border:1px solid rgba(198,166,99,.35);border-radius:26px;overflow:hidden}
+
+    /* Layout */
+    .wrap{padding:14px 10px 80px;display:flex;flex-direction:column;gap:16px}
+    .card{background:var(--lm-surface);border:1px solid var(--lm-border);border-radius:26px;overflow:hidden}
     .card-head{padding:16px 16px 8px}
-    .title-sm{font-size:15px;font-weight:800;letter-spacing:.02em}
+    .title-sm{font-size:16px;font-weight:800;letter-spacing:.02em}
     .subtitle{font-size:13px;opacity:.7}
-    .big-price{font-size:38px;font-weight:900;color:var(--lm-green);margin:6px 0 12px}
-    .tf-row{display:flex;gap:8px;margin-bottom:12px}
-    .tf-btn{background:#000;border:1px solid transparent;color:#fff;border-radius:14px;padding:6px 12px;font-size:14px}
-    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.12)}
-    .chart-container{position:relative;height:280px;background:#1a1a1a}
+    .big-price{font-size:40px;font-weight:900;color:var(--lm-green);margin:6px 0 12px}
+
+    /* Timeframes */
+    .tf-row{display:flex;gap:10px;margin-bottom:12px}
+    .tf-btn{
+      background:#222;          /* combina con #1a1a1a */
+      border:1px solid transparent;
+      color:#fff;border-radius:14px;
+      padding:7px 14px;font-size:14px
+    }
+    .tf-btn.active{border-color:var(--lm-gold);background:rgba(198,166,99,.14)}
+
+    /* Charts */
+    .chart-container{position:relative;height:300px;background:#1a1a1a}
     .chart-box{position:absolute;inset:0}
     .lm-watermark{
-      position:absolute;left:8px;bottom:8px;width:30px;height:30px;
-      opacity:.95;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 2px #000);
-      z-index:2; /* <— asegura que el logo quede encima del canvas */
+      position:absolute; left:10px; bottom:10px;
+      width:30px; height:30px; opacity:.9;
+      object-fit:contain; pointer-events:none; border-radius:6px; z-index:5;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
     }
-    .chart-footer{display:flex;justify-content:space-between;align-items:center;background:#000;padding:10px 14px 14px;font-size:13px;opacity:.9}
+
+    /* Footer de cada card */
+    .chart-footer{
+      background:var(--lm-bg);                 /* también 1a1a1a */
+      border-top:1px solid var(--lm-border);
+      display:flex;justify-content:space-between;align-items:center;
+      padding:10px 14px 14px;font-size:13px;opacity:.9
+    }
+    .chart-footer .brand{font-weight:700}
+
     @media(min-width:820px){.wrap{max-width:1180px;margin:0 auto}}
   </style>
 </head>
@@ -46,7 +87,7 @@
 
   <div class="wrap">
     <!-- ORO -->
-    <div class="card">
+    <div class="card" id="gold-card">
       <div class="card-head">
         <div class="title-sm">ORO (XAU/USD)</div>
         <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
@@ -60,18 +101,20 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
+
       <div class="chart-container">
         <div id="chart-gold" class="chart-box"></div>
-        <img class="lm-watermark" src="./IMG_2975.png?v=5" alt="LM" onerror="this.style.display='none'">
+        <!-- Marca de agua adentro del gráfico -->
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
       </div>
       <div class="chart-footer">
-        <span>LM Fondo Cotizado</span>
-        <span id="gold-upd">Actualizado: --/--/---- --:--</span>
+        <span class="brand">LM Fondo Cotizado</span>
+        <span class="ts" id="gold-upd">Actualizado: --/--/---- --:--</span>
       </div>
     </div>
 
     <!-- PLATA -->
-    <div class="card">
+    <div class="card" id="silver-card">
       <div class="card-head">
         <div class="title-sm">PLATA (XAG/USD)</div>
         <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
@@ -85,31 +128,67 @@
           <button class="tf-btn" data-tf="1d">1d</button>
         </div>
       </div>
+
       <div class="chart-container">
         <div id="chart-silver" class="chart-box"></div>
-        <img class="lm-watermark" src="./IMG_2975.png?v=5" alt="LM" onerror="this.style.display='none'">
+        <!-- Marca de agua adentro del gráfico -->
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
       </div>
       <div class="chart-footer">
-        <span>LM Fondo Cotizado</span>
-        <span id="silver-upd">Actualizado: --/--/---- --:--</span>
+        <span class="brand">LM Fondo Cotizado</span>
+        <span class="ts" id="silver-upd">Actualizado: --/--/---- --:--</span>
       </div>
     </div>
   </div>
 
   <script>
-    const fmtTS = (ts) => {
-      const d = new Date(typeof ts === 'number' ? ts*1000 : ts);
-      const p = (n)=> (n<10? '0'+n : n);
-      return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
-    };
+    /* ===== Utilidades de fecha ===== */
+    function fmtTS(ts){
+      // Acepta epoch (seg/milis) o ISO
+      const d = typeof ts === 'number'
+        ? new Date((ts < 1e12 ? ts*1000 : ts))
+        : new Date(ts || Date.now());
+      const pad = n => String(n).padStart(2,'0');
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
 
-    // ---------- CHARTS ----------
+    /* ===== API: spot ===== */
+    async function loadSpot(){
+      try{
+        const r = await fetch('/api/spot', { cache:'no-store' });
+        const data = await r.json();
+
+        if (data?.gold?.price != null){
+          const p = Number(data.gold.price);
+          document.getElementById('gold-price').textContent = '$' + p.toFixed(2);
+          document.getElementById('tk-gold').textContent    = '$' + p.toFixed(2);
+          lastPrices.gold = p;
+        }
+        if (data?.silver?.price != null){
+          const p = Number(data.silver.price);
+          document.getElementById('silver-price').textContent = '$' + p.toFixed(2);
+          document.getElementById('tk-silver').textContent    = '$' + p.toFixed(2);
+          lastPrices.silver = p;
+        }
+
+        const when = data?.updatedAt || Date.now();
+        document.getElementById('gold-upd').textContent   = 'Actualizado: ' + fmtTS(when);
+        document.getElementById('silver-upd').textContent = 'Actualizado: ' + fmtTS(when);
+
+        return data;
+      }catch(e){
+        console.log('spot error', e);
+        return null;
+      }
+    }
+
+    /* ===== Charts (Lightweight Charts) ===== */
     function buildChart(elId){
       const chart = LightweightCharts.createChart(document.getElementById(elId), {
         layout:{ background:{ color:'#1a1a1a' }, textColor:'#fff' },
-        grid:{ vertLines:{ color:'rgba(198,166,99,.05)' }, horzLines:{ color:'rgba(198,166,99,.05)' } },
-        rightPriceScale:{ borderColor:'rgba(198,166,99,.3)' },
-        timeScale:{ borderColor:'rgba(198,166,99,.3)', timeVisible:true, secondsVisible:false }
+        grid:{ vertLines:{ color: 'var(--lm-grid)' }, horzLines:{ color:'var(--lm-grid)' } },
+        rightPriceScale:{ borderColor:'var(--lm-border)' },
+        timeScale:{ borderColor:'var(--lm-border)', timeVisible:true, secondsVisible:false }
       });
       const series = chart.addCandlestickSeries({
         upColor:'#00c853', downColor:'#d32f2f',
@@ -119,80 +198,42 @@
       return { chart, series };
     }
 
-    const gold   = buildChart('chart-gold');
-    const silver = buildChart('chart-silver');
+    const { series: goldSeries }   = buildChart('chart-gold');
+    const { series: silverSeries } = buildChart('chart-silver');
 
-    // Últimos precios conocidos (para fallback)
+    // Últimos precios conocidos (para simular velas si no hay OHLC)
     const lastPrices = { gold: 4000, silver: 50 };
 
-    // Crea velas “dummy” a partir de un spot, para el timeframe activo
     function makeCandlesFromSpot(price, points=40, vol=0.0007, stepSec=60){
       const now = Math.floor(Date.now()/1000);
-      const out = []; let last = price;
-      for(let i=points;i>=0;i--){
+      const out = []; let last = price || 100;
+      for(let i=points; i>=0; i--){
         const time = now - i*stepSec;
-        const delta = (Math.random()-0.5)* price*vol;
-        const open=last, close=last+delta;
-        const high=Math.max(open,close)+price*(vol*0.6);
-        const low =Math.min(open,close)-price*(vol*0.6);
+        const delta = (Math.random()-0.5) * price * vol;
+        const open  = last;
+        const close = last + delta;
+        const high  = Math.max(open, close) + price*(vol*0.6);
+        const low   = Math.min(open, close) - price*(vol*0.6);
         out.push({ time, open, high, low, close });
-        last=close;
+        last = close;
       }
       return out;
     }
 
     function applyTF(metal, tf){
       let points=40, vol=0.0007, step=60;
-      if(tf==='5m'){ points=60; vol=0.0005; step=300; }
-      else if(tf==='15m'){ points=80; vol=0.0004; step=900; }
-      else if(tf==='1h'){ points=96; vol=0.00035; step=3600; }
-      else if(tf==='4h'){ points=60; vol=0.00025; step=14400; }
-      else if(tf==='1d'){ points=30; vol=0.00018; step=86400; }
+      if (tf==='5m'){ points=60; vol=0.0005; step=300; }
+      else if (tf==='15m'){ points=80; vol=0.0004; step=900; }
+      else if (tf==='1h'){ points=96; vol=0.00035; step=3600; }
+      else if (tf==='4h'){ points=60; vol=0.00025; step=14400; }
+      else if (tf==='1d'){ points=30; vol=0.00018; step=86400; }
 
-      const price = (metal==='XAU') ? lastPrices.gold : lastPrices.silver;
-      const data  = makeCandlesFromSpot(price, points, vol, step);
-      const series = (metal==='XAU') ? gold.series : silver.series;
-      series.setData(data);
-
-      // Fallback del precio grande (si API no actualizó)
-      const lastCandle = data[data.length-1];
-      if(metal==='XAU'){
-        if(document.getElementById('gold-price').textContent.trim()==='$--'){
-          document.getElementById('gold-price').textContent = '$'+ lastCandle.close.toFixed(2);
-        }
-      }else{
-        if(document.getElementById('silver-price').textContent.trim()==='$--'){
-          document.getElementById('silver-price').textContent = '$'+ lastCandle.close.toFixed(2);
-        }
-      }
+      const spot = (metal==='XAU') ? lastPrices.gold : lastPrices.silver;
+      const data = makeCandlesFromSpot(spot, points, vol, step);
+      (metal==='XAU' ? goldSeries : silverSeries).setData(data);
     }
 
-    // ---------- DATOS (API) ----------
-    async function loadSpot(){
-      try{
-        const r = await fetch('/api/spot',{ cache:'no-store' });
-        if(!r.ok) throw new Error('API '+r.status);
-        const data = await r.json();
-
-        if(data.gold?.price){
-          lastPrices.gold = Number(data.gold.price);
-          document.getElementById('tk-gold').textContent    = '$'+ lastPrices.gold.toFixed(2);
-          document.getElementById('gold-price').textContent = '$'+ lastPrices.gold.toFixed(2);
-          document.getElementById('gold-upd').textContent   = 'Actualizado: '+ fmtTS(data.gold.updatedAt);
-        }
-        if(data.silver?.price){
-          lastPrices.silver = Number(data.silver.price);
-          document.getElementById('tk-silver').textContent    = '$'+ lastPrices.silver.toFixed(2);
-          document.getElementById('silver-price').textContent = '$'+ lastPrices.silver.toFixed(2);
-          document.getElementById('silver-upd').textContent   = 'Actualizado: '+ fmtTS(data.silver.updatedAt);
-        }
-      }catch(e){
-        console.log('spot error', e);
-        // No tiramos nada; el fallback ya se encarga
-      }
-    }
-
-    // Botones TF
+    // Listeners timeframes
     document.querySelectorAll('.tf-row').forEach(row=>{
       const metal = row.getAttribute('data-metal');
       row.querySelectorAll('.tf-btn').forEach(btn=>{
@@ -204,30 +245,13 @@
       });
     });
 
-    // Init
+    // Init + refrescos
     (async ()=>{
-      await loadSpot();                // intenta traer precios de GoldAPI
-      applyTF('XAU','1m');             // pinta velas oro
-      applyTF('XAG','1m');             // pinta velas plata
-
-      // “Safety net”: si a los 2s sigue $--, usar fallback inmediato
-      setTimeout(()=>{
-        if(document.getElementById('gold-price').textContent.trim()==='$--'){
-          document.getElementById('gold-price').textContent = '$'+ lastPrices.gold.toFixed(2);
-        }
-        if(document.getElementById('tk-gold').textContent.trim()==='$-'){
-          document.getElementById('tk-gold').textContent = '$'+ lastPrices.gold.toFixed(2);
-        }
-        if(document.getElementById('silver-price').textContent.trim()==='$--'){
-          document.getElementById('silver-price').textContent = '$'+ lastPrices.silver.toFixed(2);
-        }
-        if(document.getElementById('tk-silver').textContent.trim()==='$-'){
-          document.getElementById('tk-silver').textContent = '$'+ lastPrices.silver.toFixed(2);
-        }
-      }, 2000);
+      await loadSpot();
+      applyTF('XAU','1m');
+      applyTF('XAG','1m');
     })();
 
-    // Refresco cada 60s
     setInterval(async ()=>{
       await loadSpot();
       const gtf = document.querySelector('.tf-row[data-metal="XAU"] .tf-btn.active')?.getAttribute('data-tf') || '1m';
