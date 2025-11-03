@@ -52,8 +52,7 @@
       </div>
       <div class="chart-container">
         <div id="chart-gold" class="chart-box"></div>
-        <!-- Logo dentro del gráfico -->
-        <img class="lm-watermark" src="./IMG_2975.png?v=3" alt="LM" onerror="this.style.display='none'">
+        <img class="lm-watermark" src="./IMG_2975.png?v=4" alt="LM" onerror="this.style.display='none'">
       </div>
       <div class="chart-footer">
         <span>LM Fondo Cotizado</span>
@@ -78,7 +77,7 @@
       </div>
       <div class="chart-container">
         <div id="chart-silver" class="chart-box"></div>
-        <img class="lm-watermark" src="./IMG_2975.png?v=3" alt="LM" onerror="this.style.display='none'">
+        <img class="lm-watermark" src="./IMG_2975.png?v=4" alt="LM" onerror="this.style.display='none'">
       </div>
       <div class="chart-footer">
         <span>LM Fondo Cotizado</span>
@@ -88,14 +87,12 @@
   </div>
 
   <script>
-    // -------- util --------
     const fmtTS = (ts) => {
       const d = new Date(typeof ts === 'number' ? ts*1000 : ts);
       const pad = (n) => (n<10 ? '0'+n : n);
       return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
-    // -------- API spot --------
     async function loadSpot() {
       try {
         const r = await fetch('/api/spot', { cache: 'no-store' });
@@ -123,7 +120,6 @@
       }
     }
 
-    // -------- generación de velas a partir del spot --------
     function makeCandlesFromSpot(price, points=40, vol=0.0007, stepSec=60) {
       const now = Math.floor(Date.now()/1000);
       const out = [];
@@ -141,7 +137,6 @@
       return out;
     }
 
-    // -------- charts --------
     function buildChart(elId) {
       const chart = LightweightCharts.createChart(document.getElementById(elId), {
         layout: { background: { color: '#1a1a1a' }, textColor: '#fff' },
@@ -187,8 +182,8 @@
     });
 
     (async () => {
-      await loadSpot();                 // llena precios
-      applyTF('XAU','1m');              // pinta velas
+      await loadSpot();
+      applyTF('XAU','1m');
       applyTF('XAG','1m');
     })();
 
