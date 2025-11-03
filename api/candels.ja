@@ -1,0 +1,80 @@
+// /api/candles.js
+// Devuelve: { ok, symbol, interval, candles:[{time,open,high,low,close}], degraded? }
+
+function ok(res, data) {
+  res.statusCode = 200;
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
+}
+function softFail(res, msg) {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ ok: false, error: msg }));
+}
+
+module.exports = async (req, res) => {
+  try {
+    const u = new URL(req.url, "http://localhost");
+    const symbol = (u.searchParams.get("symbol") || "XAUUSD").toUpperCase();
+    const interval = (u.searchParams.get("interval") || "1m");
+    const limit = Math.min(Math.max(parseInt(u.searchParams.get("limit") || "240", 10), 60), 720);
+
+    const pairMap = { XAUUSD: "XAU/USD", XAGUSD: "XAG/USD" };
+    const pair = pairMap[symbol];
+    if (!pair) return softFail(res, "Símbolo inválido");
+
+    const key = process.env.GOLDAPI_KEY;
+    if (!key) return softFail(res, "Falta GOLDAPI_KEY");
+
+    // Opción 1: si definiste GOLDAPI_CANDLES_URL, la usamos (debe devolver OHLC intradía)
+    const tmpl = process.env.GOLDAPI_CANDLES_URL || ""; // ej: https://www.goldapi.io/api/{PAIR}/candles?interval=1m&limit=240
+    if (tmpl && interval === "1m") {
+      const url = tmpl.replace("{PAIR}", pair);
+      const r = await fetch(url, {
+        headers: { "x-access-token": key, "Accept": "application/json" },
+        cache: "no-store"
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j)) {
+        // Esperamos un array de objetos con timestamp/ohlc
+        const candles = j.slice(-limit).map(row => ({
+          time: Math.floor((row.time || row.timestamp || row.t || Date.now()) / 1000),
+          open: Number(row.open ?? row.o ?? row.price ?? 0),
+          high: Number(row.high ?? row.h ?? row.price ?? 0),
+          low:  Number(row.low  ?? row.l ?? row.price ?? 0),
+          close:Number(row.close?? row.c ?? row.price ?? 0)
+        })).filter(c => c.time && c.close);
+
+        if (candles.length) return ok(res, { ok: true, symbol, interval, candles, degraded: false });
+      }
+      // si no vino en formato esperado, caemos al fallback
+    }
+
+    // Opción 2 (fallback): generamos una serie estable a partir del spot REAL (no rompe el chart)
+    const spotResp = await fetch(`https://www.goldapi.io/api/${pair}`, {
+      headers: { "x-access-token": key, "Accept": "application/json" },
+      cache: "no-store"
+    });
+    const spotJ = await spotResp.json().catch(() => ({}));
+    const base = Number(spotJ.price ?? spotJ.last ?? spotJ.ask ?? spotJ.bid);
+    if (!base) return softFail(res, "No se pudo obtener spot");
+
+    const now = Math.floor(Date.now() / 1000);
+    const candles = [];
+    // micro-oscilación visual ±0.02% para no mostrar línea completamente plana
+    const drift = (base * 0.0002);
+    for (let i = limit - 1; i >= 0; i--) {
+      const t = now - i * 60;
+      const delta = Math.sin(i / 5) * drift;
+      const o = base + delta * 0.3;
+      const c = base + delta * 0.6;
+      const h = Math.max(o, c) + drift * 0.4;
+      const l = Math.min(o, c) - drift * 0.4;
+      candles.push({ time: t, open: o, high: h, low: l, close: c });
+    }
+    return ok(res, { ok: true, symbol, interval, candles, degraded: true });
+  } catch (e) {
+    return softFail(res, e?.message || String(e));
+  }
+};
