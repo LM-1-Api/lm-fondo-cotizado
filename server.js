@@ -1,50 +1,52 @@
-// server.js  (runtime Node 18 en Vercel)
-// Express SOLO para la API; los archivos estáticos se sirven directo.
-const express = require('express');
+// server.js
+const express = require("express");
+const path = require("path");
 const app = express();
 
-const BASE = 'https://www.goldapi.io/api';
-const KEY = process.env.GOLDAPI_KEY || 'goldapi-3szmoxgsmgo1ms8o-io';
+// ✅ Servir archivos estáticos del root (index.html, IMG_2975.png, etc.)
+app.use(express.static(__dirname));
 
-// API: /api/spot  ->  { gold:{price,updatedAt}, silver:{price,updatedAt} }
-app.get('/api/spot', async (req, res) => {
+/** ------------ GOLDAPI ------------- **/
+const GOLDAPI_KEY =
+  process.env.GOLDAPI_KEY || "goldapi-3szmoxgsmgo1ms8o-io";
+const BASE = "https://www.goldapi.io/api";
+
+async function fetchMetal(symbol, fiat = "USD") {
+  const url = `${BASE}/${symbol}/${fiat}`;
+  const r = await fetch(url, {
+    headers: {
+      "x-access-token": GOLDAPI_KEY,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(`GoldAPI ${symbol} ${r.status}`);
+  const j = await r.json();
+  // distintos planes devuelven price/ask/last; tomamos el que esté
+  const price = Number(j.price ?? j.ask ?? j.last ?? j.ask_price);
+  if (!price) throw new Error(`GoldAPI ${symbol} sin precio`);
+  return { symbol: `${symbol}/USD`, price };
+}
+
+app.get("/api/spot", async (_req, res) => {
   try {
-    const headers = { 'x-access-token': KEY, 'Accept': 'application/json' };
-
-    const [gr, sr] = await Promise.all([
-      fetch(`${BASE}/XAU/USD`, { headers }),
-      fetch(`${BASE}/XAG/USD`, { headers }),
+    const [gold, silver] = await Promise.all([
+      fetchMetal("XAU"),
+      fetchMetal("XAG"),
     ]);
-
-    if (!gr.ok || !sr.ok) {
-      return res.status(502).json({
-        error: `GoldAPI status XAU:${gr.status} XAG:${sr.status}`,
-      });
-    }
-    const g = await gr.json();
-    const s = await sr.json();
-
-    const toNum = (v) => (v == null ? null : Number(v));
-    const OZ = 31.1035;
-
-    const goldPrice =
-      toNum(g.price) ?? (g.price_gram_24k ? Number(g.price_gram_24k) * OZ : null);
-
-    const silverPrice =
-      toNum(s.price) ?? (s.price_gram_999 ? Number(s.price_gram_999) * OZ : null);
-
-    if (!goldPrice || !silverPrice) {
-      return res.status(500).json({ error: 'GoldAPI: precio no disponible' });
-    }
-
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
-    res.json({
-      gold: { price: goldPrice, updatedAt: g.timestamp || Date.now() },
-      silver: { price: silverPrice, updatedAt: s.timestamp || Date.now() },
-    });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ gold, silver, updatedAt: new Date().toISOString() });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(200)
+      .json({ error: true, message: String(err), updatedAt: new Date().toISOString() });
   }
+});
+
+/** ------------ RUTA HOME ------------- **/
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 module.exports = app;
