@@ -1,117 +1,171 @@
 // /api/quotes.js
-export const config = { runtime: 'edge' }; // rápido y barato en Vercel
+// Serverless function para: precio spot + velas por timeframe
+// Fuentes: MetalPrice (con rotación de claves), GoldAPI (opcional), Metals.live (fallback)
 
-const MP_KEYS = (process.env.METALPRICE_KEYS || "").split(",").map(s => s.trim()).filter(Boolean);
+const METALPRICE_KEYS =
+  (process.env.METALPRICE_KEYS || "").split(",").map(s => s.trim()).filter(Boolean);
+
+// Opcional: si aún querés usar tu clave de GoldAPI como fallback
+const GOLDAPI_KEY = process.env.GOLDAPI_KEY || ""; // ej: goldapi-xxxxxxxx-io
+
+const UA = "LM-Fondo-Cotizado/1.0 (+vercel)";
 
 const SYMBOLS = {
-  XAUUSD: { mp: "XAU", metalsLive: "gold", dp: 2 },
-  XAGUSD: { mp: "XAG", metalsLive: "silver", dp: 2 }
+  XAUUSD: { metal: "gold", mp: "XAU", ga: "XAU/USD" },
+  XAGUSD: { metal: "silver", mp: "XAG", ga: "XAG/USD" },
 };
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+const TF_MINUTES = { "1m": 1, "5m": 5, "15m": 15, "1h": 60, "4h": 240, "1d": 1440 };
 
-// Convierte respuesta de metalpriceapi (rates = XAU per USD) a USD por onza
-function usdPerOunceFromMP(mpRates, mpCode) {
-  // mpRates[mpCode] = XAU-per-USD => USD-per-XAU = 1 / rate
-  const r = mpRates?.[mpCode];
-  if (!r || r <= 0) return null;
-  return 1 / r;
-}
-
-// Agrupa ticks [ts, price] en velas OHLC por timeframe (segundos)
-function buildCandles(ticks, tfSec) {
-  const buckets = new Map();
-  for (const [ts, px] of ticks) {
-    // metals.live entrega ts en segundos; normalizamos
-    const bucket = Math.floor(ts / tfSec) * tfSec;
-    const b = buckets.get(bucket) || { t: bucket, o: px, h: px, l: px, c: px };
-    b.h = Math.max(b.h, px);
-    b.l = Math.min(b.l, px);
-    // Si es primer tick del bucket, su o es px; el último siempre será c
-    b.c = px;
-    buckets.set(bucket, b);
-  }
-  // orden cronológico
-  return Array.from(buckets.values()).sort((a, b) => a.t - b.t)
-    .map(b => ({ time: b.t, open: b.o, high: b.h, low: b.l, close: b.c }));
-}
-
-function tfToSeconds(tf) {
-  switch ((tf || "1m")) {
-    case "1m": return 60;
-    case "5m": return 300;
-    case "15m": return 900;
-    case "1h": return 3600;
-    case "4h": return 14400;
-    case "1d": return 86400;
-    default: return 60;
-  }
-}
-
-export default async function handler(req) {
+export default async function handler(req, res) {
   try {
-    const { searchParams } = new URL(req.url);
-    const symbol = (searchParams.get("symbol") || "XAUUSD").toUpperCase();
-    const tf = (searchParams.get("tf") || "1m");
+    // CORS básico
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return res.status(200).end();
+
+    const { symbol = "XAUUSD", tf = "1m" } = req.query;
+    if (!SYMBOLS[symbol]) {
+      return res.status(400).json({ ok: false, error: "symbol inválido" });
+    }
+    if (!TF_MINUTES[tf]) {
+      return res.status(400).json({ ok: false, error: "tf inválido" });
+    }
+
     const meta = SYMBOLS[symbol];
-    if (!meta) {
-      return new Response(JSON.stringify({ ok:false, error:"Unsupported symbol"}), { status: 400 });
-    }
 
-    const tfSec = tfToSeconds(tf);
+    // 1) PRECIO SPOT: MetalPrice -> GoldAPI -> Metals.live
+    let spot = await getSpotFromMetalPrice(meta.mp);
+    if (spot == null) spot = await getSpotFromGoldAPI(meta.ga);
+    if (spot == null) spot = await getSpotFromMetalsLive(meta.metal);
 
-    // --- 1) Precio spot confiable: MetalPriceAPI ---
-    // Traemos ambos (XAU y XAG) de una para ahorrar llamadas.
-    let spotPrice = null;
-    if (MP_KEYS.length) {
-      const key = pick(MP_KEYS);
-      const mpURL = `https://api.metalpriceapi.com/v1/latest?api_key=${key}&base=USD&currencies=XAU,XAG`;
-      const mpRes = await fetch(mpURL, { headers: { "accept": "application/json" } });
-      if (mpRes.ok) {
-        const mp = await mpRes.json();
-        spotPrice = usdPerOunceFromMP(mp?.rates, meta.mp);
-      }
-    }
+    // 2) TICKS para construir velas (de Metals.live, sin API key)
+    const ticks = await getTicksFromMetalsLive(meta.metal);
+    const candles = buildCandlesFromTicks(ticks, TF_MINUTES[tf]);
 
-    // --- 2) Velas intradía reales: metals.live ---
-    // Entrega ticks recientes [timestamp, price]; los combinamos a OHLC por timeframe.
-    const mlURL = `https://api.metals.live/v1/spot/${meta.metalsLive}`;
-    const mlRes = await fetch(mlURL, { headers: { "accept": "application/json" } });
-    let candles = [];
-    if (mlRes.ok) {
-      const ticks = await mlRes.json(); // [[ts, px], ...]
-      // Últimas ~600 muestras para tener varias horas de 1m
-      const recent = ticks.slice(-800);
-      candles = buildCandles(recent, tfSec);
-      // Si no hay spot de MP, usamos el último close como spot
-      if (!spotPrice && candles.length) spotPrice = candles[candles.length - 1].close;
-    }
-
-    if (!spotPrice) {
-      return new Response(JSON.stringify({ ok:false, error:"No price from providers" }), { status: 200 });
-    }
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        symbol,
-        tf,
-        price: Number(spotPrice),
-        ts: Date.now(),
-        candles,
-        providers: { spot: "metalpriceapi.com", candles: "metals.live" }
-      }),
-      {
-        status: 200,
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          // Cache en edge por 9s para bajar costo y evitar límites
-          "cache-control": "s-maxage=9, stale-while-revalidate=30",
-          "access-control-allow-origin": "*"
-        }
-      }
-    );
-  } catch (e) {
-    return new Response(JSON.stringify({ ok:false, error: e?.message || "unexpected" }), { status: 200 });
+    return res.status(200).json({
+      ok: true,
+      symbol,
+      tf,
+      spot,
+      updated_at: Date.now(),
+      candles,
+    });
+  } catch (err) {
+    console.error("quotes error:", err);
+    return res.status(200).json({ ok: false, error: "internal_error" });
   }
+}
+
+// ===== Helpers =====
+
+async function getSpotFromMetalPrice(mpSymbol) {
+  if (!METALPRICE_KEYS.length) return null;
+
+  const urls = [
+    // Variante 1 (muchas cuentas usan 'symbols')
+    (key) =>
+      `https://api.metalpriceapi.com/v1/latest?api_key=${key}&base=USD&symbols=${mpSymbol}`,
+    // Variante 2 (algunas usan 'currencies')
+    (key) =>
+      `https://api.metalpriceapi.com/v1/latest?api_key=${key}&base=USD&currencies=${mpSymbol}`,
+  ];
+
+  for (const key of METALPRICE_KEYS) {
+    for (const makeUrl of urls) {
+      try {
+        const r = await fetch(makeUrl(key), { headers: { "User-Agent": UA } });
+        if (!r.ok) continue;
+        const j = await r.json();
+        // Normalizaciones más comunes:
+        // { rates: { XAU: 0.000249 }, base: "USD" }  → precio USD por XAU = 1 / rate
+        // { rates: { XAU: 4010.12 } }                 → precio directo
+        const rates = j.rates || j.data || {};
+        let v = rates[mpSymbol];
+        if (v == null) continue;
+
+        // Si el valor parece ser "XAU por 1 USD" (muy chico), invertimos:
+        if (v < 5) v = 1 / v;
+        // Redondeo a 2 decimales (platino/plata podrían necesitar 2)
+        return Math.round(v * 100) / 100;
+      } catch (e) {
+        // probar siguiente variante / clave
+      }
+    }
+  }
+  return null;
+}
+
+async function getSpotFromGoldAPI(gaPath) {
+  if (!GOLDAPI_KEY) return null;
+  try {
+    const url = `https://www.goldapi.io/api/${gaPath}`;
+    const r = await fetch(url, {
+      headers: {
+        "x-access-token": GOLDAPI_KEY,
+        "Accept": "application/json",
+        "User-Agent": UA,
+      },
+      cache: "no-store",
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const v = j?.price || j?.price_gram_24k || j?.ask;
+    if (!v) return null;
+    return Math.round(Number(v) * 100) / 100;
+  } catch {
+    return null;
+  }
+}
+
+async function getSpotFromMetalsLive(metal) {
+  try {
+    const url = `https://api.metals.live/v1/spot/${metal}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA }, cache: "no-store" });
+    if (!r.ok) return null;
+    const arr = await r.json(); // [[timestamp, price], ...]
+    const last = arr[arr.length - 1];
+    if (!last) return null;
+    return Math.round(Number(last[1]) * 100) / 100;
+  } catch {
+    return null;
+  }
+}
+
+async function getTicksFromMetalsLive(metal) {
+  try {
+    const url = `https://api.metals.live/v1/spot/${metal}`;
+    const r = await fetch(url, { headers: { "User-Agent": UA }, cache: "no-store" });
+    if (!r.ok) return [];
+    const arr = await r.json(); // [[timestamp, price], ...] timestamp en ms/seg
+    return arr
+      .map(([t, p]) => ({
+        // normalizamos a segundos
+        ts: t > 2e12 ? Math.floor(t / 1000) : Number(t),
+        price: Number(p),
+      }))
+      .filter((x) => Number.isFinite(x.ts) && Number.isFinite(x.price));
+  } catch {
+    return [];
+  }
+}
+
+function buildCandlesFromTicks(ticks, tfMinutes) {
+  if (!ticks.length) return [];
+  const bucket = tfMinutes * 60; // segundos
+  const map = new Map();
+
+  for (const { ts, price } of ticks) {
+    const t0 = Math.floor(ts / bucket) * bucket;
+    if (!map.has(t0)) {
+      map.set(t0, { time: t0, open: price, high: price, low: price, close: price });
+    } else {
+      const c = map.get(t0);
+      c.high = Math.max(c.high, price);
+      c.low = Math.min(c.low, price);
+      c.close = price;
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.time - b.time).slice(-300);
 }
