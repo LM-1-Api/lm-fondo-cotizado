@@ -1,173 +1,24 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LM Fondo Cotizado · USD</title>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin />
-  <style>
-    :root{
-      --bg:#1a1a1a; --card:#121212; --text:#f2f2f2; --muted:#c7c7c7;
-      --gold:#C6A663; --green:#15c85c; --pill:#0b0b0b;
-      --border:#3a2f1a;
-    }
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
-    .wrap{max-width:980px;margin:0 auto;padding:16px 14px 40px}
-    .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-end;margin:10px 2px 18px}
-    .brand{font-weight:800;line-height:1.1;font-size:26px}
-    .ticks{display:flex;gap:18px;font-weight:700}
-    .ticks span{color:#7fff7d}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;margin:18px 0;padding:8px 8px 10px}
-    .head{padding:12px}
-    .title{font-size:22px;font-weight:800}
-    .subtitle{color:var(--muted);margin-top:4px}
-    .big{font-size:56px;font-weight:900;color:#2ee66f;letter-spacing:1px;margin:4px 0 6px 12px}
-    .pills{display:flex;gap:10px;padding:8px 12px 0}
-    .pill{background:var(--pill);border-radius:14px;padding:8px 14px;font-weight:800;opacity:.9;cursor:pointer}
-    .pill.active{outline:2px solid var(--gold)}
-    .chart-container{position:relative;margin:8px 8px 0 8px}
-    .chart-box{height:440px}
-    .lm-watermark{position:absolute;left:10px;bottom:36px;opacity:.16;width:54px;height:auto;pointer-events:none;filter:grayscale(100%) contrast(110%);}
-    .footer{display:flex;justify-content:space-between;gap:8px;font-weight:800;padding:12px;border-top:1px solid var(--border)}
-    .muted{color:var(--muted);font-weight:600}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">LM Fondo Cotizado · USD</div>
-      <div class="ticks">
-        <div>ORO <span id="top-xau">$--</span></div>
-        <div>PLATA <span id="top-xag">$--</span></div>
-      </div>
-    </div>
-
-    <!-- ORO -->
-    <div class="card" id="card-xau">
-      <div class="head">
-        <div class="title">ORO (XAU/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big" id="num-xau">$--</div>
-      </div>
-      <div class="pills" id="tf-xau">
-        <div class="pill active" data-tf="1m">1m</div>
-        <div class="pill" data-tf="5m">5m</div>
-        <div class="pill" data-tf="15m">15m</div>
-        <div class="pill" data-tf="1h">1h</div>
-        <div class="pill" data-tf="4h">4h</div>
-        <div class="pill" data-tf="1d">1d</div>
-      </div>
-      <div class="chart-container">
-        <div id="chart-xau" class="chart-box"></div>
-        <img src="./IMG_2975.png" alt="LM" class="lm-watermark">
-      </div>
-      <div class="footer">
-        <div>LM Fondo Cotizado</div>
-        <div class="muted">Actualizado: <span id="upd-xau">--/--/---- --:--</span></div>
-      </div>
-    </div>
-
-    <!-- PLATA -->
-    <div class="card" id="card-xag">
-      <div class="head">
-        <div class="title">PLATA (XAG/USD)</div>
-        <div class="subtitle">Tiempo real · LM Fondo Cotizado</div>
-        <div class="big" id="num-xag">$--</div>
-      </div>
-      <div class="pills" id="tf-xag">
-        <div class="pill active" data-tf="1m">1m</div>
-        <div class="pill" data-tf="5m">5m</div>
-        <div class="pill" data-tf="15m">15m</div>
-        <div class="pill" data-tf="1h">1h</div>
-        <div class="pill" data-tf="4h">4h</div>
-        <div class="pill" data-tf="1d">1d</div>
-      </div>
-      <div class="chart-container">
-        <div id="chart-xag" class="chart-box"></div>
-        <img src="./IMG_2975.png" alt="LM" class="lm-watermark">
-      </div>
-      <div class="footer">
-        <div>LM Fondo Cotizado</div>
-        <div class="muted">Actualizado: <span id="upd-xag">--/--/---- --:--</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lightweight Charts -->
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-  <script>
-    const fmt = v => "$" + Number(v).toFixed(2);
-    const fmtTS = ts => {
-      const d = new Date(ts);
-      const pad = n => String(n).padStart(2,"0");
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-
-    async function fetchData(symbol, tf) {
-      const url = `/api/quotes?symbol=${symbol}&tf=${tf}`;
-      const r = await fetch(url, { cache: "no-store" });
-      const j = await r.json();
-      if(!j.ok) throw new Error(j.error || "sin datos");
-      return j;
-    }
-
-    function makeChart(containerId){
-      const el = document.getElementById(containerId);
-      const chart = LightweightCharts.createChart(el, {
-        layout:{ background:{ color:'#101010' }, textColor:'#e7e7e7' },
-        rightPriceScale:{ borderColor:'#333' },
-        timeScale:{ borderColor:'#333', timeVisible:true, secondsVisible:false },
-        grid:{ vertLines:{ color:'#2a2a2a' }, horzLines:{ color:'#2a2a2a' } }
-      });
-      const series = chart.addCandlestickSeries({
-        upColor:'#10d07a',downColor:'#e44', borderDownColor:'#e44', borderUpColor:'#10d07a', wickDownColor:'#e44', wickUpColor:'#10d07a'
-      });
-      return { chart, series };
-    }
-
-    const charts = {
-      XAUUSD: makeChart('chart-xau'),
-      XAGUSD: makeChart('chart-xag'),
-    };
-
-    async function load(symbol, tf){
-      try{
-        const j = await fetchData(symbol, tf);
-        const series = charts[symbol].series;
-        const data = j.candles.map(c => ({ time: c.time, open:c.open, high:c.high, low:c.low, close:c.close }));
-        series.setData(data);
-
-        // spot y cabeceras
-        const numId = symbol === 'XAUUSD' ? 'num-xau' : 'num-xag';
-        const updId = symbol === 'XAUUSD' ? 'upd-xau' : 'upd-xag';
-        const topId = symbol === 'XAUUSD' ? 'top-xau' : 'top-xag';
-
-        document.getElementById(numId).textContent = fmt(j.spot);
-        document.getElementById(topId).textContent = fmt(j.spot);
-        document.getElementById(updId).textContent = fmtTS(j.updated_at);
-      }catch(e){
-        console.error(e);
-      }
-    }
-
-    // manejo de pills
-    function bindTF(symbol, wrapId){
-      const wrap = document.getElementById(wrapId);
-      wrap.addEventListener('click', (ev)=>{
-        const btn = ev.target.closest('.pill');
-        if(!btn) return;
-        wrap.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
-        btn.classList.add('active');
-        load(symbol, btn.dataset.tf);
-      });
-    }
-    bindTF('XAUUSD','tf-xau');
-    bindTF('XAGUSD','tf-xag');
-
-    // carga inicial y refresco cada 30s
-    load('XAUUSD','1m');
-    load('XAGUSD','1m');
-    setInterval(()=>{ load('XAUUSD','1m'); load('XAGUSD','1m'); }, 30000);
-  </script>
-</body>
-</html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LM Fondo Cotizado · USD</title>
+<link rel="preconnect" href="https://unpkg.com">
+<style>
+  :root{
+    --bg:#1a1a1a;
+    --card:#111315;
+    --border:#67552e;
+    --text:#f2f2f2;
+    --muted:#9aa0a6;
+    --green:#22c55e;
+    --red:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+  }
+  .wrap{max
