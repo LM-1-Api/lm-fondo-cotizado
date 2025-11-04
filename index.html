@@ -1,24 +1,215 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>LM Fondo Cotizado · USD</title>
-<link rel="preconnect" href="https://unpkg.com">
+
+<!-- Lightweight Charts -->
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+
 <style>
   :root{
     --bg:#1a1a1a;
-    --card:#111315;
-    --border:#67552e;
-    --text:#f2f2f2;
-    --muted:#9aa0a6;
-    --green:#22c55e;
-    --red:#ef4444;
+    --panel:#111;
+    --card:#151515;
+    --gold:#C6A663;
+    --text:#F2F2F2;
+    --green:#00C853;
+    --muted:#9a9a9a;
+    --ring:#3a2f15;
   }
   *{box-sizing:border-box}
-  html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family: -apple-system, Segoe UI, Roboto, Inter, system-ui, sans-serif;
   }
-  .wrap{max
+  .topbar{
+    position:sticky; top:0; z-index:5;
+    background:var(--bg);
+    padding:14px 16px; border-bottom:1px solid #2a2a2a;
+    display:flex; gap:12px; align-items:baseline; flex-wrap:wrap;
+  }
+  .brand{ font-weight:800; line-height:1.1; font-size:22px; }
+  .dot{margin:0 4px}
+  .quote-pill{color:var(--green); font-weight:700}
+  .wrap{max-width:980px; margin:18px auto; padding:0 12px}
+  .card{
+    background:linear-gradient(#121212,#0e0e0e);
+    border:1px solid var(--ring);
+    border-radius:16px; padding:14px; margin-bottom:22px;
+    box-shadow: 0 0 0 1px rgba(198,166,99,.06) inset;
+  }
+  .card h2{margin:2px 0 6px 0; font-weight:900; letter-spacing:.4px}
+  .sub{color:#bfbfbf; font-weight:600}
+  .big{
+    font-size:56px; font-weight:900; color:var(--green);
+    margin:8px 0 10px 0; letter-spacing:.5px;
+  }
+  .tfrow{display:flex; gap:10px; margin:6px 0 10px 0}
+  .tf{background:#000; color:#ddd; border:none; border-radius:16px; padding:8px 14px; font-weight:700}
+  .tf.active{outline:2px solid var(--gold); color:#fff}
+  .chart-container{ position:relative; margin-top:8px; }
+  .chart-box{ width:100%; height:420px; position:relative; z-index:1; }
+  .lm-watermark{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-18deg);
+    width:min(62%,520px); opacity:.085; pointer-events:none; z-index:0;
+    filter:grayscale(100%) contrast(120%) brightness(140%);
+  }
+  .footer{
+    display:flex; justify-content:space-between; align-items:center;
+    color:#d9d9d9; font-weight:800; padding-top:10px
+  }
+  .muted{color:#9f9f9f; font-weight:600}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">LM Fondo Cotizado <span class="dot">·</span> USD</div>
+    <div class="muted">ORO <span id="top-xau" class="quote-pill">$--</span> &nbsp;&nbsp; PLATA <span id="top-xag" class="quote-pill">$--</span></div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ORO -->
+    <div class="card" id="card-xau">
+      <h2>ORO (XAU/USD)</h2>
+      <div class="sub">Tiempo real · LM Fondo Cotizado</div>
+      <div id="xau-price" class="big">$--</div>
+      <div class="tfrow" id="xau-tf"></div>
+
+      <div class="chart-container">
+        <div id="xau-chart" class="chart-box"></div>
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+      </div>
+
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div class="muted">Actualizado: <span id="xau-ts">--/--/---- --:--</span></div>
+      </div>
+    </div>
+
+    <!-- PLATA -->
+    <div class="card" id="card-xag">
+      <h2>PLATA (XAG/USD)</h2>
+      <div class="sub">Tiempo real · LM Fondo Cotizado</div>
+      <div id="xag-price" class="big">$--</div>
+      <div class="tfrow" id="xag-tf"></div>
+
+      <div class="chart-container">
+        <div id="xag-chart" class="chart-box"></div>
+        <img src="/IMG_2975.png" alt="LM" class="lm-watermark" />
+      </div>
+
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div class="muted">Actualizado: <span id="xag-ts">--/--/---- --:--</span></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ====== UTILIDADES ======
+  const fmt = v => "$" + Number(v).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const tsToLocal = t => {
+    const d = new Date(t);
+    const pad = n => String(n).padStart(2,"0");
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  // ====== MANEJADOR DE CHART + AGREGADOR DE VELAS DESDE TICKS ======
+  function attachChart(elId, priceElId, tsElId, topElId, symbol){
+    const box = document.getElementById(elId);
+    const chart = LightweightCharts.createChart(box, {
+      layout: { background: { color: '#111111' }, textColor: '#cfcfcf' },
+      grid: { vertLines: { color: '#222' }, horzLines: { color: '#222' } },
+      rightPriceScale: { borderColor: '#2d2d2d' },
+      timeScale: { borderColor: '#2d2d2d', timeVisible: true, secondsVisible: false },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    });
+    const series = chart.addCandlestickSeries({
+      upColor: '#00c853', downColor: '#ff5252', wickUpColor:'#00c853', wickDownColor:'#ff5252', borderVisible:false
+    });
+
+    // Estado local de velas por timeframe
+    let tf = 60_000; // 1m
+    const buckets = new Map(); // key: bucketTs -> {open, high, low, close, time}
+    let lastPlotted = [];
+
+    function setTimeframe(ms){
+      tf = ms;
+      buckets.clear();
+      lastPlotted = [];
+      series.setData([]); // limpiamos
+    }
+
+    // UI timeframes
+    const TF_LIST = [
+      ["1m", 60_000], ["5m", 5*60_000], ["15m", 15*60_000], ["1h", 60*60_000], ["4h", 4*60*60_000], ["1d", 24*60*60_000],
+    ];
+    const tfWrap = document.getElementById(symbol.toLowerCase()+"-tf");
+    TF_LIST.forEach(([label, ms], i) => {
+      const b = document.createElement("button");
+      b.className = "tf" + (i===0 ? " active":"");
+      b.textContent = label;
+      b.onclick = () => {
+        Array.from(tfWrap.children).forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        setTimeframe(ms);
+      };
+      tfWrap.appendChild(b);
+    });
+
+    async function pull(){
+      try{
+        const r = await fetch(`/api/quote?symbol=${symbol}`, { cache: 'no-store' });
+        const j = await r.json();
+        if (!j?.ok) throw new Error(j?.error || "sin datos");
+        const price = Number(j.price);
+        const ts = Number(j.ts) || Date.now();
+
+        // Actualiza números
+        document.getElementById(priceElId).textContent = fmt(price);
+        document.getElementById(tsElId).textContent = tsToLocal(ts);
+        document.getElementById(topElId).textContent = fmt(price);
+
+        // Agrega tick a vela
+        const bTs = Math.floor(ts / tf) * tf; // inicio del bucket
+        let c = buckets.get(bTs);
+        if (!c){
+          c = { time: Math.floor(bTs/1000), open: price, high: price, low: price, close: price };
+          buckets.set(bTs, c);
+        }else{
+          c.close = price;
+          if (price > c.high) c.high = price;
+          if (price < c.low) c.low = price;
+        }
+
+        // Replot eficiente
+        const arr = Array.from(buckets.keys()).sort((a,b)=>a-b).map(k => buckets.get(k));
+        lastPlotted = arr;
+        series.setData(arr);
+      }catch(err){
+        // opcional: mostrar un pequeño aviso en consola
+        console.warn(symbol, err.message);
+      }
+    }
+
+    // Primer render + polling
+    pull();
+    setInterval(pull, 2500); // 2.5s
+    // Resize
+    const ro = new ResizeObserver(() => chart.applyOptions({ width: box.clientWidth, height: box.clientHeight }));
+    ro.observe(box);
+  }
+
+  // Oro & Plata
+  attachChart("xau-chart", "xau-price", "xau-ts", "top-xau", "XAUUSD");
+  attachChart("xag-chart", "xag-price", "xag-ts", "top-xag", "XAGUSD");
+</script>
+
+</body>
+</html>
