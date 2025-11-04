@@ -1,129 +1,165 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LM Fondo Cotizado · USD</title>
-<link rel="preconnect" href="https://unpkg.com">
-<style>
-  :root{--bg:#1A1A1A;--ring:#2a2416;--text:#F2F2F2;--muted:#9aa0a6;--green:#00C853;}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,system-ui,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  .top{padding:14px 16px 8px;border-bottom:1px solid #262626;background:#121212}
-  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline}
-  h1{margin:0;font-size:22px;font-weight:800}
-  .ticks{display:flex;gap:18px;font-weight:800}.ticks .l{color:var(--muted);margin-right:6px}.ticks .v{color:var(--green)}
-  .wrap{max-width:980px;margin:14px auto;padding:0 14px;display:grid;gap:18px}
-  .card{background:linear-gradient(180deg,#111,#0b0b0b);border:1px solid var(--ring);border-radius:18px;padding:18px}
-  .ttl{font-size:22px;font-weight:900;margin:0 0 2px}.sub{color:var(--muted);font-size:14px;margin-bottom:8px}
-  .big{font-size:56px;font-weight:900;color:var(--green);line-height:1;margin:8px 0}
-  .btns{display:flex;gap:10px;margin:6px 0 10px}.btn{background:#000;border:1px solid #333;border-radius:14px;padding:8px 14px;color:#ddd}.btn.active{border-color:#6b5b32;box-shadow:inset 0 0 0 1px #7b6938}
-  .chartbox{position:relative;border:1px solid #2b2b2b;border-radius:12px;background:#0c0c0c;height:380px;padding:6px}
-  .chart{position:absolute;inset:6px}
-  .lm{position:absolute;left:16px;bottom:16px;width:44px;height:auto;opacity:.5;filter:grayscale(1) contrast(1.05) brightness(1.1);pointer-events:none}
-  .foot{display:flex;justify-content:space-between;margin-top:10px;font-weight:800}.mut{color:var(--muted);font-weight:600}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LM Fondo Cotizado · USD</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root{
+      --bg:#1a1a1a; --panel:#121212; --ring:#3a2f1a; --text:#f2f2f2; --muted:#9aa0a6;
+      --up:#00c853; --down:#ff5252; --gold:#C6A663;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .topbar{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid #2a2a2a;padding:14px 16px}
+    .brand{font-weight:800;line-height:1.1}
+    .ticker{float:right;display:flex;gap:18px;font-weight:700}
+    .ticker b{color:var(--up)}
+    .wrap{padding:16px;display:grid;gap:22px}
+    .card{background:#0d0d0d;border:1px solid var(--ring);border-radius:18px;padding:18px}
+    .card h2{margin:0 0 6px 0}
+    .sub{color:var(--muted);font-weight:600;margin-bottom:12px}
+    .big{font-size:48px;font-weight:900;color:var(--up);letter-spacing:.5px;margin:8px 0 12px}
+    .btns{display:flex;gap:12px;margin-bottom:12px}
+    .btn{background:#000;border:1px solid #222;padding:8px 14px;border-radius:20px;font-weight:800}
+    .btn.active{outline:2px solid var(--gold);background:#141414}
+    .chart-box{position:relative;width:100%;height:420px;border:1px solid #2a2a2a;border-radius:8px;background:#0c0c0c}
+    .lm-watermark{
+      position:absolute;left:10px;bottom:10px;width:64px;height:auto;opacity:.14;
+      pointer-events:none;z-index:3;filter:grayscale(1) contrast(1.05) brightness(.95)
+    }
+    .footer{display:flex;justify-content:space-between;margin-top:10px;color:#c9c9c9;font-weight:700}
+  </style>
 </head>
 <body>
-
-<div class="top">
-  <div class="row">
-    <h1>LM Fondo Cotizado · USD</h1>
-    <div class="ticks">
-      <div><span class="l">ORO</span><span id="tick-g" class="v">$-</span></div>
-      <div><span class="l">PLATA</span><span id="tick-s" class="v">$-</span></div>
+  <div class="topbar">
+    <div class="brand">LM Fondo Cotizado · USD</div>
+    <div class="ticker">
+      <div>ORO <b id="tXAU"> $-</b></div>
+      <div>PLATA <b id="tXAG"> $-</b></div>
     </div>
   </div>
-</div>
 
-<div class="wrap">
+  <div class="wrap">
 
-  <!-- ORO -->
-  <div class="card">
-    <div class="ttl">ORO (XAU/USD)</div>
-    <div class="sub">Tiempo real · LM Fondo Cotizado</div>
-    <div id="spot-g" class="big">$--</div>
-    <div class="btns" data-sym="XAUUSD">
-      <button class="btn active" data-i="1m">1m</button>
-      <button class="btn" disabled>5m</button><button class="btn" disabled>15m</button>
-      <button class="btn" disabled>1h</button><button class="btn" disabled>4h</button><button class="btn" disabled>1d</button>
+    <!-- ======== ORO ======== -->
+    <div class="card" id="card-xau">
+      <h2>ORO (XAU/USD)</h2>
+      <div class="sub">Tiempo real · LM Fondo Cotizado</div>
+      <div class="big" id="pXAU">$--</div>
+      <div class="btns" data-sym="XAUUSD">
+        <button class="btn active" data-tf="1m">1m</button>
+        <button class="btn" data-tf="5m">5m</button>
+        <button class="btn" data-tf="15m">15m</button>
+        <button class="btn" data-tf="1h">1h</button>
+        <button class="btn" data-tf="4h">4h</button>
+        <button class="btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-box">
+        <div id="cXAU" style="width:100%;height:100%"></div>
+        <img src="./IMG_2975.png" alt="LM" class="lm-watermark">
+      </div>
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div id="uXAU">Actualizado: --/--/---- --:--</div>
+      </div>
     </div>
-    <div class="chartbox">
-      <div id="chart-g" class="chart"></div>
-      <img src="/IMG_2975.png" alt="LM" class="lm" />
+
+    <!-- ======== PLATA ======== -->
+    <div class="card" id="card-xag">
+      <h2>PLATA (XAG/USD)</h2>
+      <div class="sub">Tiempo real · LM Fondo Cotizado</div>
+      <div class="big" id="pXAG">$--</div>
+      <div class="btns" data-sym="XAGUSD">
+        <button class="btn active" data-tf="1m">1m</button>
+        <button class="btn" data-tf="5m">5m</button>
+        <button class="btn" data-tf="15m">15m</button>
+        <button class="btn" data-tf="1h">1h</button>
+        <button class="btn" data-tf="4h">4h</button>
+        <button class="btn" data-tf="1d">1d</button>
+      </div>
+      <div class="chart-box">
+        <div id="cXAG" style="width:100%;height:100%"></div>
+        <img src="./IMG_2975.png" alt="LM" class="lm-watermark">
+      </div>
+      <div class="footer">
+        <div>LM Fondo Cotizado</div>
+        <div id="uXAG">Actualizado: --/--/---- --:--</div>
+      </div>
     </div>
-    <div class="foot"><div>LM Fondo Cotizado</div><div class="mut">Actualizado: <span id="ts-g">--/--/---- --:--</span></div></div>
+
   </div>
 
-  <!-- PLATA -->
-  <div class="card">
-    <div class="ttl">PLATA (XAG/USD)</div>
-    <div class="sub">Tiempo real · LM Fondo Cotizado</div>
-    <div id="spot-s" class="big">$--</div>
-    <div class="btns" data-sym="XAGUSD">
-      <button class="btn active" data-i="1m">1m</button>
-      <button class="btn" disabled>5m</button><button class="btn" disabled>15m</button>
-      <button class="btn" disabled>1h</button><button class="btn" disabled>4h</button><button class="btn" disabled>1d</button>
-    </div>
-    <div class="chartbox">
-      <div id="chart-s" class="chart"></div>
-      <img src="/IMG_2975.png" alt="LM" class="lm" />
-    </div>
-    <div class="foot"><div>LM Fondo Cotizado</div><div class="mut">Actualizado: <span id="ts-s">--/--/---- --:--</span></div></div>
-  </div>
+  <script>
+    const API = "/api/quotes";
 
-</div>
+    const theme = {
+      layout: { background: { type: 'solid', color: '#0c0c0c' }, textColor: '#eaeaea' },
+      grid: { horzLines: { color: '#1f1f1f'}, vertLines: { color: '#1f1f1f'} },
+      crosshair: { mode: 0 },
+      rightPriceScale: { borderColor: '#2a2a2a' },
+      timeScale: { borderColor: '#2a2a2a', timeVisible: true, secondsVisible: false }
+    };
 
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-<script>
-  const fmt$ = n => "$" + Number(n).toFixed(2);
-  const fmtTS = ms => { const d=new Date(ms); const z=n=>String(n).padStart(2,"0");
-    return `${z(d.getDate())}/${z(d.getMonth()+1)}/${d.getFullYear()} ${z(d.getHours())}:${z(d.getMinutes())}`; };
-
-  async function api(path){ const r = await fetch(path, { cache:"no-store" }); return r.json(); }
-
-  function mkChart(el){
-    const chart = LightweightCharts.createChart(el, {
-      layout:{ background:{ type:'solid', color:'#0c0c0c' }, textColor:'#ddd' },
-      rightPriceScale:{ borderColor:'#333' },
-      timeScale:{ borderColor:'#333' },
-      grid:{ vertLines:{ color:'#262626' }, horzLines:{ color:'#262626' } }
-    });
-    const series = chart.addCandlestickSeries({
-      upColor:'#00C853', downColor:'#E53935', borderVisible:false,
-      wickUpColor:'#00C853', wickDownColor:'#E53935'
-    });
-    return { chart, series };
-  }
-
-  const CG = mkChart(document.getElementById('chart-g'));
-  const CS = mkChart(document.getElementById('chart-s'));
-
-  async function load(symbol, ids, ch){
-    const spot = await api(`/api/spot?symbol=${symbol}`);
-    if (spot?.ok){ document.getElementById(ids.spot).textContent = fmt$(spot.price);
-      document.getElementById(ids.ts).textContent = fmtTS(spot.ts);
-      document.getElementById(ids.tick).textContent = fmt$(spot.price); }
-
-    const candles = await api(`/api/candles?symbol=${symbol}&limit=240`);
-    if (candles?.ok && Array.isArray(candles.candles)){
-      ch.series.setData(candles.candles);
+    function mkChart(el) {
+      const chart = LightweightCharts.createChart(el, theme);
+      const series = chart.addCandlestickSeries({
+        upColor: '#00c853', downColor: '#ff5252',
+        borderUpColor: '#00c853', borderDownColor: '#ff5252',
+        wickUpColor: '#00c853', wickDownColor: '#ff5252'
+      });
+      return { chart, series };
     }
-  }
 
-  function refreshAll(){
-    load("XAUUSD", {spot:"spot-g", ts:"ts-g", tick:"tick-g"}, CG);
-    load("XAGUSD", {spot:"spot-s", ts:"ts-s", tick:"tick-s"}, CS);
-  }
-  refreshAll();
-  setInterval(refreshAll, 25000);
+    const panels = {
+      XAUUSD: { cont: document.getElementById('cXAU'), priceEl: pXAU, topEl: tXAU, upd: uXAU, tf: '1m' },
+      XAGUSD: { cont: document.getElementById('cXAG'), priceEl: pXAG, topEl: tXAG, upd: uXAG, tf: '1m' }
+    };
 
-  document.querySelectorAll('.btns').forEach(g=>{
-    g.addEventListener('click', e=>{
-      const b=e.target.closest('button'); if(!b) return;
-      g.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active'); /* futuro: cambiar interval cuando tengas intradía real */
+    for (const sym of Object.keys(panels)) {
+      panels[sym].lw = mkChart(panels[sym].cont);
+    }
+
+    async function load(sym) {
+      const tf = panels[sym].tf || '1m';
+      const r = await fetch(`${API}?symbol=${sym}&tf=${tf}`).then(r => r.json()).catch(()=>null);
+      if (!r || !r.ok) return;
+
+      // precio grande + top bar
+      const val = r.price;
+      panels[sym].priceEl.textContent = '$' + Number(val).toFixed(2);
+      panels[sym].topEl.textContent = '$' + Number(val).toFixed(2);
+
+      // velas
+      if (Array.isArray(r.candles) && r.candles.length) {
+        panels[sym].lw.series.setData(r.candles);
+      }
+
+      // actualizado
+      const d = new Date(r.ts);
+      const pad = n => String(n).padStart(2,'0');
+      panels[sym].upd.textContent =
+        `Actualizado: ${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    // listeners de timeframe
+    document.querySelectorAll('.btns').forEach(group => {
+      group.addEventListener('click', e => {
+        const btn = e.target.closest('.btn'); if (!btn) return;
+        group.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const sym = group.dataset.sym;
+        panels[sym].tf = btn.dataset.tf;
+        load(sym);
+      });
     });
-  });
-</script>
+
+    // carga inicial
+    load('XAUUSD'); load('XAGUSD');
+    // refresh cada 20s (seguro para rate-limits)
+    setInterval(() => { load('XAUUSD'); load('XAGUSD'); }, 20000);
+  </script>
 </body>
 </html>
