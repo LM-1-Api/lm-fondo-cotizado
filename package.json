@@ -1,10 +1,5 @@
 {
   "name": "lm-fondo-cotizado",
   "private": true,
-  "type": "commonjs",
-  "engines": { "node": ">=18" },
-  "scripts": {
-    "start": "vercel dev"
-  },
-  "dependencies": {}
+  "version": "1.0.0"
 }
